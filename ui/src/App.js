@@ -1081,7 +1081,7 @@ function App() {
                   {createdLabel ? (
                     <section className="result-panel" aria-live="polite">
                       <div className="section-heading">
-                        <p>Resultado</p>
+                        <p>Result</p>
                         <span>shipping_labels.data</span>
                       </div>
 
