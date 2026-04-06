@@ -4,7 +4,7 @@ const target = process.env.API_PROXY_TARGET || 'http://localhost:3031';
 
 module.exports = function setupProxy(app) {
   app.use(
-    ['/auth', '/sanctum'],
+    ['/auth', '/sanctum', '/shipping-labels'],
     createProxyMiddleware({
       changeOrigin: true,
       secure: false,

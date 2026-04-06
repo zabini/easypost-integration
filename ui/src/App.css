@@ -1,7 +1,7 @@
 .app-shell {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: minmax(280px, 1.15fr) minmax(320px, 0.95fr);
+  grid-template-columns: minmax(280px, 1.05fr) minmax(360px, 1.15fr);
 }
 
 .hero-panel {
@@ -26,12 +26,16 @@
   width: 280px;
   height: 280px;
   border-radius: 50%;
-  background: linear-gradient(135deg, rgba(255, 158, 0, 0.28), rgba(250, 237, 205, 0.04));
+  background: linear-gradient(
+    135deg,
+    rgba(255, 158, 0, 0.28),
+    rgba(250, 237, 205, 0.04)
+  );
   filter: blur(8px);
 }
 
 .hero-copy {
-  max-width: 38rem;
+  max-width: 40rem;
   position: relative;
   z-index: 1;
 }
@@ -58,14 +62,20 @@
 
 .hero-text {
   margin: 0;
-  max-width: 34rem;
+  max-width: 35rem;
   color: rgba(245, 243, 239, 0.82);
   font-size: 1.02rem;
   line-height: 1.75;
 }
 
+.hero-text code,
+.profile-note code,
+.result-panel code {
+  font-family: 'IBM Plex Mono', 'SFMono-Regular', monospace;
+}
+
 .endpoint-card {
-  width: min(100%, 36rem);
+  width: min(100%, 38rem);
   padding: 1.5rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 28px;
@@ -149,7 +159,7 @@
 }
 
 .auth-card {
-  width: min(100%, 34rem);
+  width: min(100%, 48rem);
   padding: 2rem;
   border-radius: 30px;
   background: rgba(255, 255, 255, 0.84);
@@ -247,7 +257,10 @@
   font-size: 0.98rem;
   font-weight: 700;
   cursor: pointer;
-  transition: transform 180ms ease, background-color 180ms ease, color 180ms ease;
+  transition:
+    transform 180ms ease,
+    background-color 180ms ease,
+    color 180ms ease;
 }
 
 .mode-switch__button:hover {
@@ -265,6 +278,107 @@
   margin-top: 1.6rem;
 }
 
+.workspace-panel {
+  margin-top: 1.8rem;
+  display: grid;
+  gap: 1.25rem;
+}
+
+.workspace-toolbar {
+  display: grid;
+  gap: 1rem;
+}
+
+.profile-grid {
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.profile-block {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem 1.1rem;
+  border-radius: 20px;
+  background: #f8fafc;
+  border: 1px solid rgba(16, 32, 51, 0.08);
+}
+
+.profile-block span,
+.result-item span {
+  color: #64748b;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.profile-block strong,
+.result-item strong {
+  color: #102033;
+  font-size: 1.05rem;
+  word-break: break-word;
+}
+
+.profile-note {
+  padding: 1rem 1.1rem;
+  border-radius: 18px;
+  background: #fff8e7;
+  color: #6a4a00;
+  line-height: 1.6;
+  font-size: 0.92rem;
+}
+
+.shipping-form,
+.result-panel {
+  padding: 1.2rem;
+  border-radius: 24px;
+  border: 1px solid rgba(16, 32, 51, 0.08);
+  background: rgba(248, 250, 252, 0.82);
+}
+
+.shipping-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.form-section {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.section-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.section-heading p {
+  margin: 0;
+  color: #102033;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.section-heading span {
+  color: #64748b;
+  font-family: 'IBM Plex Mono', 'SFMono-Regular', monospace;
+  font-size: 0.8rem;
+}
+
+.field-grid {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.field-grid--address {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.field-grid--parcel {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .field {
   display: grid;
   gap: 0.42rem;
@@ -273,7 +387,12 @@
   font-weight: 600;
 }
 
-.field input {
+.field--full {
+  grid-column: 1 / -1;
+}
+
+.field input,
+.field select {
   width: 100%;
   border: 1px solid rgba(16, 32, 51, 0.14);
   border-radius: 16px;
@@ -281,10 +400,14 @@
   background: #fffdf8;
   color: #102033;
   font: inherit;
-  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
 }
 
-.field input:focus {
+.field input:focus,
+.field select:focus {
   outline: none;
   border-color: rgba(232, 93, 4, 0.65);
   box-shadow: 0 0 0 4px rgba(255, 158, 0, 0.12);
@@ -306,7 +429,10 @@
   font: inherit;
   font-weight: 700;
   cursor: pointer;
-  transition: transform 180ms ease, box-shadow 180ms ease, opacity 180ms ease;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    opacity 180ms ease;
   box-shadow: 0 18px 32px rgba(232, 93, 4, 0.22);
 }
 
@@ -324,47 +450,61 @@
   box-shadow: 0 18px 32px rgba(139, 44, 29, 0.18);
 }
 
-.profile-panel {
-  margin-top: 1.8rem;
+.shipping-form__submit {
+  margin-top: 0.25rem;
+}
+
+.result-panel {
   display: grid;
   gap: 1rem;
 }
 
-.profile-grid {
-  display: grid;
-  gap: 0.9rem;
+.result-panel--empty {
+  color: #425466;
+  line-height: 1.6;
 }
 
-.profile-block {
+.result-grid {
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.result-item {
   display: grid;
   gap: 0.35rem;
   padding: 1rem 1.1rem;
   border-radius: 20px;
-  background: #f8fafc;
+  background: #ffffff;
   border: 1px solid rgba(16, 32, 51, 0.08);
 }
 
-.profile-block span {
-  color: #64748b;
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
+.result-item--wide {
+  grid-column: 1 / -1;
 }
 
-.profile-block strong {
-  color: #102033;
-  font-size: 1.05rem;
-  word-break: break-word;
+.result-link {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 3rem;
+  padding: 0.85rem 1rem;
+  border-radius: 16px;
+  background: #102033;
+  color: #fff7ed;
+  text-decoration: none;
+  font-weight: 700;
+  transition: transform 180ms ease, opacity 180ms ease;
 }
 
-.profile-note {
-  padding: 1rem 1.1rem;
-  border-radius: 18px;
-  background: #fff8e7;
-  color: #6a4a00;
-  line-height: 1.6;
-  font-family: 'IBM Plex Mono', 'SFMono-Regular', monospace;
-  font-size: 0.88rem;
+.result-link:hover {
+  transform: translateY(-1px);
+}
+
+@media (max-width: 1120px) {
+  .field-grid--parcel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 960px) {
@@ -379,6 +519,25 @@
 
   .hero-copy h1 {
     font-size: clamp(2rem, 10vw, 3rem);
+  }
+
+  .auth-card {
+    padding: 1.4rem;
+  }
+}
+
+@media (max-width: 720px) {
+  .auth-card__topbar,
+  .section-heading {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .profile-grid,
+  .field-grid--address,
+  .field-grid--parcel,
+  .result-grid {
+    grid-template-columns: 1fr;
   }
 }
 
