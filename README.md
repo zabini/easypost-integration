@@ -1,4 +1,4 @@
-# Turno Take-Home Test
+# Easy Post Integration
 
 A full-stack prototype for user registration and USPS shipping label generation with EasyPost. Although the repository also includes a React UI, the implementation was concentrated in the `api` environment, where authentication, business rules, external integration, and data persistence live.
 
