@@ -73,16 +73,6 @@ services:
       - 3306:3306
     networks:
       - easypost-integration-net
-      
-  # easypost-integration-redis:
-  #   image: redis
-  #   container_name: easypost-integration-redis
-  #   restart: unless-stopped
-  #   command: redis-server --requirepass root_pass --appendonly yes
-  #   ports:
-  #     - "6379:6379"
-  #   networks:
-  #     - easypost-integration-net
 
 volumes:
   easypost-integration-data:
