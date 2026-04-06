@@ -1,0 +1,35 @@
+info:
+  name: Logout
+  type: http
+  seq: 4
+
+http:
+  method: POST
+  url: http://localhost:3031/auth/logout
+  headers:
+    - name: Accept
+      value: application/json
+    - name: X-Requested-With
+      value: XMLHttpRequest
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Encerra a sessao autenticada atual.
+
+  ## Sucesso
+  `200 OK`
+
+  ```json
+  {
+    "message": "Logged out successfully."
+  }
+  ```
+
+  ## Erros comuns
+  - `401 Unauthorized`: usuario nao autenticado

@@ -1,0 +1,56 @@
+info:
+  name: Sign Up
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: http://localhost:3031/auth/signup
+  headers:
+    - name: Accept
+      value: application/json
+    - name: Content-Type
+      value: application/json
+    - name: X-Requested-With
+      value: XMLHttpRequest
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Jane Doe",
+        "email": "jane@example.com",
+        "password": "12345678",
+        "password_confirmation": "12345678"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Cria um novo usuario, inicia a sessao autenticada e retorna os dados publicos do usuario.
+
+  ## Regras
+  - `name`: obrigatorio
+  - `email`: obrigatorio e valido
+  - `password`: obrigatorio, minimo de 8 caracteres e com confirmacao
+
+  ## Sucesso
+  `201 Created`
+
+  ```json
+  {
+    "data": {
+      "id": 1,
+      "name": "Jane Doe",
+      "email": "jane@example.com"
+    }
+  }
+  ```
+
+  ## Erros comuns
+  - `422 Unprocessable Entity`: payload invalido
+  - `422 Unprocessable Entity`: email ja cadastrado

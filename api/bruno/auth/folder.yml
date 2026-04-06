@@ -1,0 +1,15 @@
+info:
+  name: Auth
+  type: folder
+  seq: 2
+
+docs: |-
+  Endpoints de autenticacao baseados em sessao e cookies.
+
+  ## Fluxo esperado
+  1. `POST /auth/signup` ou `POST /auth/login`
+  2. `GET /auth/me` para recuperar o usuario autenticado
+  3. `POST /auth/logout` para encerrar a sessao
+
+  ## Observacao
+  As rotas `POST` passam por middleware de CSRF. No frontend do projeto isso e resolvido com `GET /sanctum/csrf-cookie` antes das mutacoes.

@@ -1,0 +1,13 @@
+info:
+  name: Shipping Labels
+  type: folder
+  seq: 3
+
+docs: |-
+  Endpoints para compra, listagem e consulta de etiquetas de envio USPS.
+
+  ## Regras de negocio
+  - todas as rotas exigem usuario autenticado
+  - cada usuario visualiza apenas as proprias etiquetas
+  - apenas enderecos dos Estados Unidos sao aceitos
+  - o backend cria o shipment, escolhe uma tarifa USPS e persiste a etiqueta comprada

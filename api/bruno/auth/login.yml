@@ -1,0 +1,49 @@
+info:
+  name: Login
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: http://localhost:3031/auth/login
+  headers:
+    - name: Accept
+      value: application/json
+    - name: Content-Type
+      value: application/json
+    - name: X-Requested-With
+      value: XMLHttpRequest
+  body:
+    type: json
+    data: |-
+      {
+        "email": "jane@example.com",
+        "password": "12345678"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Autentica um usuario existente e retorna os dados publicos da sessao.
+
+  ## Sucesso
+  `200 OK`
+
+  ```json
+  {
+    "data": {
+      "id": 1,
+      "name": "Jane Doe",
+      "email": "jane@example.com"
+    }
+  }
+  ```
+
+  ## Erros comuns
+  - `401 Unauthorized`: credenciais invalidas
+  - `422 Unprocessable Entity`: payload invalido

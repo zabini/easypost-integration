@@ -1,0 +1,70 @@
+info:
+  name: List Shipping Labels
+  type: http
+  seq: 1
+
+http:
+  method: GET
+  url: http://localhost:3031/shipping-labels
+  headers:
+    - name: Accept
+      value: application/json
+    - name: X-Requested-With
+      value: XMLHttpRequest
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Lista apenas as etiquetas pertencentes ao usuario autenticado.
+
+  ## Sucesso
+  `200 OK`
+
+  ```json
+  {
+    "data": [
+      {
+        "id": 1,
+        "tracking_code": "9400100000000000000000",
+        "label_url": "https://example.test/label.pdf",
+        "carrier": "USPS",
+        "service": "Priority",
+        "rate_amount": "8.68",
+        "rate_currency": "USD",
+        "status": "purchased",
+        "from_address": {
+          "name": "Jane Sender",
+          "street1": "417 Montgomery Street",
+          "city": "San Francisco",
+          "state": "CA",
+          "zip": "94104",
+          "country": "US"
+        },
+        "to_address": {
+          "name": "John Receiver",
+          "street1": "388 Townsend St",
+          "city": "San Francisco",
+          "state": "CA",
+          "zip": "94107",
+          "country": "US"
+        },
+        "parcel": {
+          "weight_oz": 12,
+          "length_in": 10,
+          "width_in": 7,
+          "height_in": 4
+        },
+        "created_at": "2026-04-06T12:00:00+00:00",
+        "updated_at": "2026-04-06T12:00:00+00:00"
+      }
+    ]
+  }
+  ```
+
+  ## Erros comuns
+  - `401 Unauthorized`: usuario nao autenticado

@@ -1,0 +1,106 @@
+info:
+  name: Create Shipping Label
+  type: http
+  seq: 3
+
+http:
+  method: POST
+  url: http://localhost:3031/shipping-labels
+  headers:
+    - name: Accept
+      value: application/json
+    - name: Content-Type
+      value: application/json
+    - name: X-Requested-With
+      value: XMLHttpRequest
+  body:
+    type: json
+    data: |-
+      {
+        "from_address": {
+          "name": "Jane Sender",
+          "street1": "417 Montgomery Street",
+          "city": "San Francisco",
+          "state": "CA",
+          "zip": "94104",
+          "country": "US"
+        },
+        "to_address": {
+          "name": "John Receiver",
+          "street1": "388 Townsend St",
+          "city": "San Francisco",
+          "state": "CA",
+          "zip": "94107",
+          "country": "US"
+        },
+        "parcel": {
+          "weight_oz": 12,
+          "length_in": 10,
+          "width_in": 7,
+          "height_in": 4
+        }
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Cria um shipment no provider, compra uma tarifa USPS e persiste a etiqueta resultante para o usuario autenticado.
+
+  ## Regras
+  - `from_address.country` e `to_address.country` devem ser `US`
+  - `state` deve ter 2 caracteres
+  - `zip` deve seguir o formato de ZIP code dos Estados Unidos
+  - `weight_oz`, `length_in`, `width_in` e `height_in` devem ser maiores que zero
+
+  ## Sucesso
+  `201 Created`
+
+  ```json
+  {
+    "data": {
+      "id": 1,
+      "tracking_code": "9400100000000000000000",
+      "label_url": "https://example.test/label.pdf",
+      "carrier": "USPS",
+      "service": "Priority Express",
+      "rate_amount": "7.50",
+      "rate_currency": "USD",
+      "status": "purchased",
+      "from_address": {
+        "name": "Jane Sender",
+        "street1": "417 Montgomery Street",
+        "city": "San Francisco",
+        "state": "CA",
+        "zip": "94104",
+        "country": "US"
+      },
+      "to_address": {
+        "name": "John Receiver",
+        "street1": "388 Townsend St",
+        "city": "San Francisco",
+        "state": "CA",
+        "zip": "94107",
+        "country": "US"
+      },
+      "parcel": {
+        "weight_oz": 12,
+        "length_in": 10,
+        "width_in": 7,
+        "height_in": 4
+      },
+      "created_at": "2026-04-06T12:00:00+00:00",
+      "updated_at": "2026-04-06T12:00:00+00:00"
+    }
+  }
+  ```
+
+  ## Erros comuns
+  - `401 Unauthorized`: usuario nao autenticado
+  - `422 Unprocessable Entity`: endereco fora dos Estados Unidos
+  - `422 Unprocessable Entity`: payload invalido
+  - `422 Unprocessable Entity`: erro retornado pelo provider
