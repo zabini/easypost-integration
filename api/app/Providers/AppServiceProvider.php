@@ -2,6 +2,13 @@
 
 namespace App\Providers;
 
+use App\Core\Domain\Contracts\Auth\AuthenticationSession;
+use App\Core\Domain\Contracts\Auth\PasswordHasher;
+use App\Core\Domain\Contracts\Auth\UserRepository;
+use App\Infra\Auth\LaravelPasswordHasher;
+use App\Infra\Auth\SanctumAuthenticationSession;
+use App\Infra\Persistence\Auth\EloquentUserRepository;
+use App\Infra\Persistence\Auth\UserMapper;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -11,7 +18,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(UserMapper::class);
+        $this->app->bind(UserRepository::class, EloquentUserRepository::class);
+        $this->app->bind(PasswordHasher::class, LaravelPasswordHasher::class);
+        $this->app->bind(AuthenticationSession::class, SanctumAuthenticationSession::class);
     }
 
     /**
