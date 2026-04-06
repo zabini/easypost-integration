@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Core\Domain\ShippingLabel\ShippingLabelStatus;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -25,6 +26,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 class ShippingLabel extends Model
 {
+    public function scopeOwnedBy(Builder $query, int $userId): Builder
+    {
+        return $query->where($this->qualifyColumn('user_id'), $userId);
+    }
+
     protected function casts(): array
     {
         return [

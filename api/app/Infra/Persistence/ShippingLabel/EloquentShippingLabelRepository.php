@@ -24,8 +24,8 @@ final readonly class EloquentShippingLabelRepository implements ShippingLabelRep
     public function findByIdAndUserId(int $id, int $userId): ?ShippingLabel
     {
         $label = EloquentShippingLabel::query()
+            ->ownedBy($userId)
             ->whereKey($id)
-            ->where('user_id', $userId)
             ->first();
 
         if ($label === null) {
@@ -38,7 +38,7 @@ final readonly class EloquentShippingLabelRepository implements ShippingLabelRep
     public function findByUserId(int $userId): array
     {
         return EloquentShippingLabel::query()
-            ->where('user_id', $userId)
+            ->ownedBy($userId)
             ->latest()
             ->get()
             ->map(fn (EloquentShippingLabel $label) => $this->mapper->toDomain($label))

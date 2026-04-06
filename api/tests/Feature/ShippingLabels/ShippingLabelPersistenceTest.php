@@ -155,6 +155,48 @@ class ShippingLabelPersistenceTest extends TestCase
         $this->assertCount(1, $repository->findByUserId($user->id));
     }
 
+    public function test_it_exposes_a_reusable_owned_by_scope(): void
+    {
+        $owner = User::factory()->create();
+        $anotherUser = User::factory()->create();
+
+        $ownerLabel = ShippingLabel::query()->create($this->shippingLabelAttributes($owner->id));
+        ShippingLabel::query()->create(array_merge(
+            $this->shippingLabelAttributes($anotherUser->id),
+            ['easypost_shipment_id' => 'shp_other_123'],
+        ));
+
+        $ownedIds = ShippingLabel::query()
+            ->ownedBy($owner->id)
+            ->pluck('id')
+            ->all();
+
+        $this->assertSame([$ownerLabel->id], $ownedIds);
+    }
+
+    public function test_it_isolates_repository_queries_by_user(): void
+    {
+        $owner = User::factory()->create();
+        $anotherUser = User::factory()->create();
+        $repository = $this->app->make(ShippingLabelRepository::class);
+
+        $ownerLabel = ShippingLabel::query()->create($this->shippingLabelAttributes($owner->id));
+        $anotherUsersLabel = ShippingLabel::query()->create(array_merge(
+            $this->shippingLabelAttributes($anotherUser->id),
+            [
+                'easypost_shipment_id' => 'shp_other_123',
+                'easypost_rate_id' => 'rate_other_123',
+                'tracking_code' => '9400100000000000000001',
+            ],
+        ));
+
+        $visibleToOwner = $repository->findByUserId($owner->id);
+
+        $this->assertCount(1, $visibleToOwner);
+        $this->assertSame($ownerLabel->id, $visibleToOwner[0]->id());
+        $this->assertNull($repository->findByIdAndUserId($anotherUsersLabel->id, $owner->id));
+    }
+
     private function shippingLabelAttributes(int $userId): array
     {
         return [
