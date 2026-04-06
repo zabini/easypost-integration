@@ -119,7 +119,7 @@ function formatTimestamp(value) {
     return value;
   }
 
-  return new Intl.DateTimeFormat('pt-BR', {
+  return new Intl.DateTimeFormat('en-US', {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(parsedDate);
@@ -196,7 +196,7 @@ function App() {
       setFeedback({
         tone: 'danger',
         message:
-          error.message || 'Nao foi possivel validar a sessao com a API.',
+          error.message || 'Unable to validate the session with the API.',
       });
     }
   });
@@ -223,14 +223,14 @@ function App() {
         resetShippingLabelsState();
         setFeedback({
           tone: 'danger',
-          message: 'Sua sessao expirou. Entre novamente para continuar.',
+          message: 'Your session has expired. Sign in again to continue.',
         });
         return;
       }
 
       setFeedback({
         tone: 'danger',
-        message: error.message || 'Falha ao listar suas entregas.',
+        message: error.message || 'Failed to load your shipments.',
       });
       setHasLoadedShippingLabels(true);
     } finally {
@@ -310,13 +310,13 @@ function App() {
       resetShippingLabelsState();
       setFeedback({
         tone: 'success',
-        message: 'Sessao iniciada com sucesso.',
+        message: 'Signed in successfully.',
       });
     } catch (error) {
       setAuthFieldErrors(error.errors || {});
       setFeedback({
         tone: 'danger',
-        message: error.message || 'Falha ao autenticar o usuario.',
+        message: error.message || 'Failed to sign in.',
       });
     } finally {
       setIsAuthSubmitting(false);
@@ -345,13 +345,13 @@ function App() {
       resetShippingLabelsState();
       setFeedback({
         tone: 'success',
-        message: 'Conta criada e autenticada com sucesso.',
+        message: 'Account created and signed in successfully.',
       });
     } catch (error) {
       setAuthFieldErrors(error.errors || {});
       setFeedback({
         tone: 'danger',
-        message: error.message || 'Falha ao criar a conta.',
+        message: error.message || 'Failed to create the account.',
       });
     } finally {
       setIsAuthSubmitting(false);
@@ -374,12 +374,12 @@ function App() {
       resetShippingLabelsState();
       setFeedback({
         tone: 'neutral',
-        message: 'Sessao encerrada com sucesso.',
+        message: 'Signed out successfully.',
       });
     } catch (error) {
       setFeedback({
         tone: 'danger',
-        message: error.message || 'Falha ao encerrar a sessao.',
+        message: error.message || 'Failed to sign out.',
       });
     } finally {
       setIsAuthSubmitting(false);
@@ -402,7 +402,7 @@ function App() {
       invalidateShippingLabels();
       setFeedback({
         tone: 'success',
-        message: 'Shipping label criada com sucesso.',
+        message: 'Shipping label created successfully.',
       });
     } catch (error) {
       if (error.status === 401) {
@@ -414,7 +414,7 @@ function App() {
         resetShippingLabelsState();
         setFeedback({
           tone: 'danger',
-          message: 'Sua sessao expirou. Entre novamente para continuar.',
+          message: 'Your session has expired. Sign in again to continue.',
         });
         return;
       }
@@ -422,7 +422,7 @@ function App() {
       setShippingFieldErrors(error.errors || {});
       setFeedback({
         tone: 'danger',
-        message: error.message || 'Falha ao criar a shipping label.',
+        message: error.message || 'Failed to create the shipping label.',
       });
     } finally {
       setIsLabelSubmitting(false);
@@ -454,23 +454,23 @@ function App() {
         <div className="auth-card">
           <div className="auth-card__topbar">
             <div>
-              <p className="auth-card__label">Sessao atual</p>
+              <p className="auth-card__label">Current session</p>
               <h2>
                 {status === 'loading'
-                  ? 'Verificando autenticacao'
+                  ? 'Checking authentication'
                   : isAuthenticated
                     ? workspaceView === 'list'
-                      ? 'Minhas entregas'
-                      : 'Criar ShippingLabels'
-                    : 'Acesse sua conta'}
+                      ? 'My shipments'
+                      : 'Create shipping label'
+                    : 'Access your account'}
               </h2>
             </div>
             <span className={`status-pill status-pill--${status}`}>
               {status === 'loading'
-                ? 'checando'
+                ? 'checking'
                 : isAuthenticated
-                  ? 'ativo'
-                  : 'visitante'}
+                  ? 'active'
+                  : 'guest'}
             </span>
           </div>
 
@@ -489,7 +489,7 @@ function App() {
                     <strong>{user.id}</strong>
                   </article>
                   <article className="profile-block">
-                    <span>Nome</span>
+                    <span>Name</span>
                     <strong>{user.name}</strong>
                   </article>
                   <article className="profile-block">
@@ -504,11 +504,11 @@ function App() {
                   onClick={handleSignout}
                   type="button"
                 >
-                  {isAuthSubmitting ? 'Saindo...' : 'Signout'}
+                  {isAuthSubmitting ? 'Signing out...' : 'Sign out'}
                 </button>
               </div>
 
-              <div className="workspace-nav" role="tablist" aria-label="Telas">
+              <div className="workspace-nav" role="tablist" aria-label="Views">
                 <button
                   aria-selected={workspaceView === 'list'}
                   className={
@@ -520,7 +520,7 @@ function App() {
                   role="tab"
                   type="button"
                 >
-                  Listar entregas
+                  Shipment list
                 </button>
                 <button
                   aria-selected={workspaceView === 'create'}
@@ -533,14 +533,14 @@ function App() {
                   role="tab"
                   type="button"
                 >
-                  Nova entrega
+                  New shipment
                 </button>
               </div>
 
               {workspaceView === 'list' ? (
                 <section className="shipping-list-panel" aria-live="polite">
                   <div className="section-heading">
-                    <p>Minhas entregas</p>
+                    <p>My shipments</p>
                     <div className="section-heading__actions">
                       <span>GET /shipping-labels</span>
                       <button
@@ -552,14 +552,14 @@ function App() {
                         }}
                         type="button"
                       >
-                        {isShippingLabelsLoading ? 'Atualizando...' : 'Atualizar'}
+                        {isShippingLabelsLoading ? 'Refreshing...' : 'Refresh'}
                       </button>
                     </div>
                   </div>
 
                   {isShippingLabelsLoading ? (
                     <div className="empty-state">
-                      Carregando suas entregas cadastradas...
+                      Loading your saved shipments...
                     </div>
                   ) : shippingLabels.length > 0 ? (
                     <div className="shipping-list">
@@ -568,10 +568,10 @@ function App() {
                           <div className="shipping-card__header">
                             <div>
                               <p className="shipping-card__eyebrow">
-                                Entrega #{shippingLabel.id}
+                                Shipment #{shippingLabel.id}
                               </p>
                               <h3>
-                                {shippingLabel.tracking_code || 'Tracking pendente'}
+                                {shippingLabel.tracking_code || 'Tracking pending'}
                               </h3>
                             </div>
                             <span className="shipping-card__status">
@@ -581,13 +581,13 @@ function App() {
 
                           <div className="result-grid">
                             <article className="result-item">
-                              <span>Servico</span>
+                              <span>Service</span>
                               <strong>
                                 {shippingLabel.carrier} / {shippingLabel.service}
                               </strong>
                             </article>
                             <article className="result-item">
-                              <span>Valor</span>
+                              <span>Rate</span>
                               <strong>
                                 {formatMoney(
                                   shippingLabel.rate_amount,
@@ -596,23 +596,23 @@ function App() {
                               </strong>
                             </article>
                             <article className="result-item">
-                              <span>Pacote</span>
+                              <span>Parcel</span>
                               <strong>{formatParcel(shippingLabel.parcel)}</strong>
                             </article>
                             <article className="result-item">
-                              <span>Criada em</span>
+                              <span>Created at</span>
                               <strong>
                                 {formatTimestamp(shippingLabel.created_at)}
                               </strong>
                             </article>
                             <article className="result-item result-item--wide">
-                              <span>Origem</span>
+                              <span>Origin</span>
                               <strong>
                                 {formatAddress(shippingLabel.from_address)}
                               </strong>
                             </article>
                             <article className="result-item result-item--wide">
-                              <span>Destino</span>
+                              <span>Destination</span>
                               <strong>
                                 {formatAddress(shippingLabel.to_address)}
                               </strong>
@@ -626,7 +626,7 @@ function App() {
                               rel="noreferrer"
                               target="_blank"
                             >
-                              Abrir etiqueta
+                              Open label
                             </a>
                           ) : null}
                         </article>
@@ -634,13 +634,13 @@ function App() {
                     </div>
                   ) : (
                     <div className="empty-state">
-                      <p>Nenhuma entrega encontrada para a sua conta.</p>
+                      <p>No shipments found for your account.</p>
                       <button
                         className="primary-button empty-state__button"
                         onClick={() => handleWorkspaceViewChange('create')}
                         type="button"
                       >
-                        Criar nova entrega
+                        Create new shipment
                       </button>
                     </div>
                   )}
@@ -648,9 +648,10 @@ function App() {
               ) : (
                 <>
                   <div className="profile-note">
-                    <code>POST /shipping-labels</code> cria o shipment, escolhe
-                    a menor tarifa USPS disponivel e devolve a etiqueta comprada
-                    com tracking, carrier, service e <code>label_url</code>.
+                    <code>POST /shipping-labels</code> creates the shipment,
+                    selects the lowest available USPS rate, and returns the
+                    purchased label with tracking, carrier, service, and{' '}
+                    <code>label_url</code>.
                   </div>
 
                   <form
@@ -659,13 +660,13 @@ function App() {
                   >
                     <section className="form-section">
                       <div className="section-heading">
-                        <p>Remetente</p>
+                        <p>Sender</p>
                         <span>from_address</span>
                       </div>
 
                       <div className="field-grid field-grid--address">
                         <label className="field">
-                          <span>Nome</span>
+                          <span>Name</span>
                           <input
                             name="name"
                             onChange={handleShippingAddressChange('fromAddress')}
@@ -720,7 +721,7 @@ function App() {
                         </label>
 
                         <label className="field">
-                          <span>Cidade</span>
+                          <span>City</span>
                           <input
                             name="city"
                             onChange={handleShippingAddressChange('fromAddress')}
@@ -742,7 +743,7 @@ function App() {
                         </label>
 
                         <label className="field">
-                          <span>Estado</span>
+                          <span>State</span>
                           <input
                             maxLength="2"
                             name="state"
@@ -788,7 +789,7 @@ function App() {
                         </label>
 
                         <label className="field">
-                          <span>Pais</span>
+                          <span>Country</span>
                           <select
                             name="country"
                             onChange={handleShippingAddressChange('fromAddress')}
@@ -813,13 +814,13 @@ function App() {
 
                     <section className="form-section">
                       <div className="section-heading">
-                        <p>Destinatario</p>
+                        <p>Recipient</p>
                         <span>to_address</span>
                       </div>
 
                       <div className="field-grid field-grid--address">
                         <label className="field">
-                          <span>Nome</span>
+                          <span>Name</span>
                           <input
                             name="name"
                             onChange={handleShippingAddressChange('toAddress')}
@@ -874,7 +875,7 @@ function App() {
                         </label>
 
                         <label className="field">
-                          <span>Cidade</span>
+                          <span>City</span>
                           <input
                             name="city"
                             onChange={handleShippingAddressChange('toAddress')}
@@ -896,7 +897,7 @@ function App() {
                         </label>
 
                         <label className="field">
-                          <span>Estado</span>
+                          <span>State</span>
                           <input
                             maxLength="2"
                             name="state"
@@ -942,7 +943,7 @@ function App() {
                         </label>
 
                         <label className="field">
-                          <span>Pais</span>
+                          <span>Country</span>
                           <select
                             name="country"
                             onChange={handleShippingAddressChange('toAddress')}
@@ -967,13 +968,13 @@ function App() {
 
                     <section className="form-section">
                       <div className="section-heading">
-                        <p>Pacote</p>
+                        <p>Parcel</p>
                         <span>parcel</span>
                       </div>
 
                       <div className="field-grid field-grid--parcel">
                         <label className="field">
-                          <span>Peso (oz)</span>
+                          <span>Weight (oz)</span>
                           <input
                             min="0"
                             name="weightOz"
@@ -996,7 +997,7 @@ function App() {
                         </label>
 
                         <label className="field">
-                          <span>Comprimento (in)</span>
+                          <span>Length (in)</span>
                           <input
                             min="0"
                             name="lengthIn"
@@ -1019,7 +1020,7 @@ function App() {
                         </label>
 
                         <label className="field">
-                          <span>Largura (in)</span>
+                          <span>Width (in)</span>
                           <input
                             min="0"
                             name="widthIn"
@@ -1042,7 +1043,7 @@ function App() {
                         </label>
 
                         <label className="field">
-                          <span>Altura (in)</span>
+                          <span>Height (in)</span>
                           <input
                             min="0"
                             name="heightIn"
@@ -1072,8 +1073,8 @@ function App() {
                       type="submit"
                     >
                       {isLabelSubmitting
-                        ? 'Criando shipping label...'
-                        : 'Criar shipping label'}
+                        ? 'Creating shipping label...'
+                        : 'Create shipping label'}
                     </button>
                   </form>
 
@@ -1094,13 +1095,13 @@ function App() {
                           <strong>{createdLabel.tracking_code || '-'}</strong>
                         </article>
                         <article className="result-item">
-                          <span>Servico</span>
+                          <span>Service</span>
                           <strong>
                             {createdLabel.carrier} / {createdLabel.service}
                           </strong>
                         </article>
                         <article className="result-item">
-                          <span>Valor</span>
+                          <span>Rate</span>
                           <strong>
                             {formatMoney(
                               createdLabel.rate_amount,
@@ -1109,13 +1110,13 @@ function App() {
                           </strong>
                         </article>
                         <article className="result-item result-item--wide">
-                          <span>Origem</span>
+                          <span>Origin</span>
                           <strong>
                             {formatAddress(createdLabel.from_address)}
                           </strong>
                         </article>
                         <article className="result-item result-item--wide">
-                          <span>Destino</span>
+                          <span>Destination</span>
                           <strong>{formatAddress(createdLabel.to_address)}</strong>
                         </article>
                         <article className="result-item">
@@ -1127,7 +1128,7 @@ function App() {
                           <strong>{createdLabel.easypost_rate_id}</strong>
                         </article>
                         <article className="result-item result-item--wide">
-                          <span>Criada em</span>
+                          <span>Created at</span>
                           <strong>
                             {formatTimestamp(createdLabel.created_at)}
                           </strong>
@@ -1141,14 +1142,14 @@ function App() {
                           rel="noreferrer"
                           target="_blank"
                         >
-                          Abrir label_url
+                          Open label URL
                         </a>
                       ) : null}
                     </section>
                   ) : (
                     <section className="result-panel result-panel--empty">
-                      Preencha remetente, destinatario e pacote para criar a
-                      ShippingLabel via <code>POST /shipping-labels</code>.
+                      Fill in sender, recipient, and parcel to create the
+                      shipping label via <code>POST /shipping-labels</code>.
                     </section>
                   )}
                 </>
@@ -1156,7 +1157,7 @@ function App() {
             </div>
           ) : (
             <>
-              <div className="mode-switch" role="tablist" aria-label="Modo">
+              <div className="mode-switch" role="tablist" aria-label="Mode">
                 <button
                   aria-controls="sign-panel"
                   aria-selected={mode === 'sign'}
@@ -1170,7 +1171,7 @@ function App() {
                   role="tab"
                   type="button"
                 >
-                  Sign
+                  Sign in
                 </button>
                 <button
                   aria-controls="sgnup-panel"
@@ -1185,7 +1186,7 @@ function App() {
                   role="tab"
                   type="button"
                 >
-                  Sgnup
+                  Sign up
                 </button>
               </div>
 
@@ -1212,12 +1213,12 @@ function App() {
                     </label>
 
                     <label className="field">
-                      <span>Senha</span>
+                      <span>Password</span>
                       <input
                         autoComplete="current-password"
                         name="password"
                         onChange={handleSignInChange}
-                        placeholder="Digite sua senha"
+                        placeholder="Enter your password"
                         type="password"
                         value={signInForm.password}
                       />
@@ -1231,7 +1232,7 @@ function App() {
                       disabled={isAuthSubmitting}
                       type="submit"
                     >
-                      {isAuthSubmitting ? 'Entrando...' : 'Entrar'}
+                      {isAuthSubmitting ? 'Signing in...' : 'Sign in'}
                     </button>
                   </form>
                 </div>
@@ -1243,7 +1244,7 @@ function App() {
                 >
                   <form className="auth-form" onSubmit={handleSignUpSubmit}>
                     <label className="field">
-                      <span>Nome</span>
+                      <span>Name</span>
                       <input
                         autoComplete="name"
                         name="name"
@@ -1273,12 +1274,12 @@ function App() {
                     </label>
 
                     <label className="field">
-                      <span>Senha</span>
+                      <span>Password</span>
                       <input
                         autoComplete="new-password"
                         name="password"
                         onChange={handleSignUpChange}
-                        placeholder="Minimo de 8 caracteres"
+                        placeholder="Minimum 8 characters"
                         type="password"
                         value={signUpForm.password}
                       />
@@ -1288,12 +1289,12 @@ function App() {
                     </label>
 
                     <label className="field">
-                      <span>Confirmacao de senha</span>
+                      <span>Password confirmation</span>
                       <input
                         autoComplete="new-password"
                         name="passwordConfirmation"
                         onChange={handleSignUpChange}
-                        placeholder="Repita a senha"
+                        placeholder="Repeat the password"
                         type="password"
                         value={signUpForm.passwordConfirmation}
                       />
@@ -1304,7 +1305,7 @@ function App() {
                       disabled={isAuthSubmitting}
                       type="submit"
                     >
-                      {isAuthSubmitting ? 'Criando conta...' : 'Criar conta'}
+                      {isAuthSubmitting ? 'Creating account...' : 'Create account'}
                     </button>
                   </form>
                 </div>

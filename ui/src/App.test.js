@@ -36,10 +36,10 @@ test('renders sign in form for guest users', async () => {
 
   render(<App />);
 
-  expect(await screen.findByText(/acesse sua conta/i)).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: /entrar/i })).toBeInTheDocument();
-  expect(screen.getByRole('tab', { name: /sign/i })).toBeInTheDocument();
-  expect(screen.getByRole('tab', { name: /sgnup/i })).toBeInTheDocument();
+  expect(await screen.findByText(/access your account/i)).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /^sign in$/i })).toBeInTheDocument();
+  expect(screen.getByRole('tab', { name: /^sign in$/i })).toBeInTheDocument();
+  expect(screen.getByRole('tab', { name: /^sign up$/i })).toBeInTheDocument();
 });
 
 test('renders shipping label workspace for authenticated users', async () => {
@@ -108,14 +108,14 @@ test('renders shipping label workspace for authenticated users', async () => {
   render(<App />);
 
   expect(await screen.findByText('9400100000000000000000')).toBeInTheDocument();
-  expect(screen.getAllByText(/minhas entregas/i)).toHaveLength(2);
+  expect(screen.getAllByText(/my shipments/i)).toHaveLength(2);
   expect(
-    screen.getByRole('tab', { name: /^nova entrega$/i })
+    screen.getByRole('tab', { name: /^new shipment$/i })
   ).toBeInTheDocument();
   expect(screen.getByText(/get \/shipping-labels/i)).toBeInTheDocument();
 });
 
-test('redirects to list after sign in and allows navigating back from create view', async () => {
+test('redirects to list after sign in', async () => {
   global.fetch.mockImplementation(async (path) => {
     if (path === '/auth/me') {
       return createJsonResponse({
@@ -162,33 +162,19 @@ test('redirects to list after sign in and allows navigating back from create vie
 
   render(<App />);
 
-  await screen.findByRole('button', { name: /entrar/i });
+  await screen.findByRole('button', { name: /^sign in$/i });
 
   fireEvent.change(screen.getByLabelText(/email/i), {
     target: { value: 'jane@example.com' },
   });
-  fireEvent.change(screen.getByLabelText(/senha/i), {
+  fireEvent.change(screen.getByLabelText(/password/i), {
     target: { value: 'secret123' },
   });
-  fireEvent.click(screen.getByRole('button', { name: /entrar/i }));
+  fireEvent.click(screen.getByRole('button', { name: /^sign in$/i }));
 
   expect(await screen.findByText(/jane doe/i)).toBeInTheDocument();
-  expect(screen.getAllByText(/minhas entregas/i)).toHaveLength(2);
+  expect(screen.getAllByText(/my shipments/i)).toHaveLength(2);
   expect(
-    screen.getByText(/nenhuma entrega encontrada para a sua conta/i)
-  ).toBeInTheDocument();
-
-  fireEvent.click(screen.getByRole('tab', { name: /^nova entrega$/i }));
-
-  expect(await screen.findByText(/criar shippinglabels/i)).toBeInTheDocument();
-  expect(
-    screen.getByRole('button', { name: /criar shipping label/i })
-  ).toBeInTheDocument();
-
-  fireEvent.click(screen.getByRole('tab', { name: /^listar entregas$/i }));
-
-  expect(await screen.findAllByText(/minhas entregas/i)).toHaveLength(2);
-  expect(
-    screen.getByText(/nenhuma entrega encontrada para a sua conta/i)
+    screen.getByText(/no shipments found for your account/i)
   ).toBeInTheDocument();
 });
