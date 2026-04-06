@@ -25,13 +25,11 @@ class CreateTest extends TestCase
 
         $this->actingAs($user);
 
-        $this->postJson('/shipping-labels', $this->payload())
+        $response = $this->postJson('/shipping-labels', $this->payload())
             ->assertCreated()
             ->assertJson([
                 'data' => [
                     'id' => 1,
-                    'easypost_shipment_id' => 'shp_test_123',
-                    'easypost_rate_id' => 'rate_usps_express',
                     'tracking_code' => '9400100000000000000000',
                     'label_url' => 'https://example.test/label.pdf',
                     'carrier' => 'USPS',
@@ -53,6 +51,9 @@ class CreateTest extends TestCase
                     ],
                 ],
             ]);
+
+        $this->assertArrayNotHasKey('easypost_shipment_id', $response->json('data'));
+        $this->assertArrayNotHasKey('easypost_rate_id', $response->json('data'));
 
         $this->assertDatabaseHas('shipping_labels', [
             'id' => 1,

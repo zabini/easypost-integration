@@ -4,6 +4,7 @@ use App\Core\Domain\Exceptions\AuthenticationRequiredException;
 use App\Core\Domain\Exceptions\DuplicateEmailException;
 use App\Core\Domain\Exceptions\InvalidCredentialsException;
 use App\Core\Domain\Exceptions\ShippingLabelAddressNotSupportedException;
+use App\Core\Domain\Exceptions\ShippingLabelNotFoundException;
 use App\Core\Domain\Exceptions\ShippingLabelUspsRateUnavailableException;
 use App\Core\Domain\Exceptions\ShippingProviderAuthenticationException;
 use App\Core\Domain\Exceptions\ShippingProviderRequestException;
@@ -51,6 +52,12 @@ return Application::configure(basePath: dirname(__DIR__))
                 'message' => $exception->getMessage(),
                 'errors' => $exception->errors(),
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        });
+
+        $exceptions->render(function (ShippingLabelNotFoundException $exception) {
+            return response()->json([
+                'message' => $exception->getMessage(),
+            ], Response::HTTP_NOT_FOUND);
         });
 
         $exceptions->render(function (ShippingLabelUspsRateUnavailableException $exception) {

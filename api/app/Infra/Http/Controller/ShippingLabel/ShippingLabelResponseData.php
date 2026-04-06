@@ -10,8 +10,6 @@ final class ShippingLabelResponseData
     {
         return [
             'id' => $shippingLabel->id(),
-            'easypost_shipment_id' => $shippingLabel->easypostShipmentId(),
-            'easypost_rate_id' => $shippingLabel->easypostRateId(),
             'tracking_code' => $shippingLabel->trackingCode(),
             'label_url' => $shippingLabel->labelUrl(),
             'carrier' => $shippingLabel->carrier(),

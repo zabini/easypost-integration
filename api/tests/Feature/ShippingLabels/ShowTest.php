@@ -8,51 +8,67 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class ListTest extends TestCase
+class ShowTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_it_lists_only_shipping_labels_owned_by_the_authenticated_user(): void
+    public function test_it_returns_the_requested_shipping_label_for_the_authenticated_user(): void
     {
         $user = User::factory()->create();
-        $anotherUser = User::factory()->create();
 
-        $firstLabel = ShippingLabel::query()->create($this->shippingLabelAttributes($user->id, [
-            'easypost_shipment_id' => 'shp_test_123',
+        $shippingLabel = ShippingLabel::query()->create($this->shippingLabelAttributes($user->id, [
             'tracking_code' => '9400100000000000000000',
-        ]));
-        $secondLabel = ShippingLabel::query()->create($this->shippingLabelAttributes($user->id, [
-            'easypost_shipment_id' => 'shp_test_456',
-            'tracking_code' => '9400100000000000000001',
-        ]));
-        $anotherUsersLabel = ShippingLabel::query()->create($this->shippingLabelAttributes($anotherUser->id, [
-            'easypost_shipment_id' => 'shp_test_789',
-            'tracking_code' => '9400100000000000000002',
         ]));
 
         $this->actingAs($user);
 
-        $response = $this->getJson('/shipping-labels')
+        $response = $this->getJson("/shipping-labels/{$shippingLabel->id}")
             ->assertOk()
-            ->assertJsonCount(2, 'data');
+            ->assertJson([
+                'data' => [
+                    'id' => $shippingLabel->id,
+                    'tracking_code' => '9400100000000000000000',
+                    'label_url' => 'https://example.test/label.pdf',
+                    'carrier' => 'USPS',
+                    'service' => 'Priority',
+                    'rate_amount' => '8.68',
+                    'rate_currency' => 'USD',
+                    'status' => 'purchased',
+                    'from_address' => [
+                        'country' => 'US',
+                    ],
+                    'to_address' => [
+                        'country' => 'US',
+                    ],
+                    'parcel' => [
+                        'weight_oz' => 12,
+                    ],
+                ],
+            ]);
 
-        $returnedIds = collect($response->json('data'))
-            ->pluck('id')
-            ->sort()
-            ->values()
-            ->all();
-
-        $this->assertSame([$firstLabel->id, $secondLabel->id], $returnedIds);
-        $this->assertNotContains($anotherUsersLabel->id, $returnedIds);
-        collect($response->json('data'))->each(function (array $label): void {
-            $this->assertArrayNotHasKey('easypost_shipment_id', $label);
-            $this->assertArrayNotHasKey('easypost_rate_id', $label);
-        });
+        $this->assertArrayNotHasKey('easypost_shipment_id', $response->json('data'));
+        $this->assertArrayNotHasKey('easypost_rate_id', $response->json('data'));
     }
 
-    public function test_it_requires_authentication_to_list_shipping_labels(): void
+    public function test_it_returns_not_found_for_labels_owned_by_another_user(): void
     {
-        $this->getJson('/shipping-labels')
+        $user = User::factory()->create();
+        $anotherUser = User::factory()->create();
+
+        $shippingLabel = ShippingLabel::query()->create($this->shippingLabelAttributes($anotherUser->id));
+
+        $this->actingAs($user);
+
+        $this->getJson("/shipping-labels/{$shippingLabel->id}")
+            ->assertNotFound()
+            ->assertJson([
+                'message' => 'Shipping label not found.',
+            ]);
+    }
+
+    public function test_it_requires_authentication_to_get_a_shipping_label(): void
+    {
+        $this->getJson('/shipping-labels/1')
             ->assertUnauthorized()
             ->assertJson([
                 'message' => 'Unauthenticated.',
