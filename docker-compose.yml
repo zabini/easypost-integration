@@ -8,7 +8,6 @@ services:
       dockerfile: build/docker/Dockerfile
       args:
         UID: "${UID:-33}"
-    container_name: easypost-integration-php
     restart: unless-stopped
     mem_limit: 1g
     env_file:
@@ -20,7 +19,6 @@ services:
 
   easypost-integration-nginx:
     image: nginx:alpine
-    container_name: easypost-integration-nginx
     restart: unless-stopped
     depends_on:
       - easypost-integration-api
@@ -36,7 +34,6 @@ services:
     build:
       context: ./ui
       dockerfile: Dockerfile
-    container_name: easypost-integration-ui
     restart: unless-stopped
     working_dir: /app
     environment:
@@ -57,7 +54,6 @@ services:
       - easypost-integration-net
 
   easypost-integration-db:
-    container_name: easypost-integration-db
     image: mysql:8.0
     restart: unless-stopped
     command: --default-authentication-plugin=mysql_native_password --lower_case_table_names=1 --sort_buffer_size=512K
