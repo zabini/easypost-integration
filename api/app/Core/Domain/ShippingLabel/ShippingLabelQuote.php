@@ -5,7 +5,7 @@ namespace App\Core\Domain\ShippingLabel;
 final readonly class ShippingLabelQuote
 {
     /**
-     * @param list<ShippingLabelRate> $rates
+     * @param  list<ShippingLabelRate>  $rates
      */
     public function __construct(
         private string $shipmentId,
@@ -14,8 +14,7 @@ final readonly class ShippingLabelQuote
         private array $parcel,
         private array $rates,
         private array $rawResponse,
-    ) {
-    }
+    ) {}
 
     public function shipmentId(): string
     {
@@ -48,5 +47,29 @@ final readonly class ShippingLabelQuote
     public function rawResponse(): array
     {
         return $this->rawResponse;
+    }
+
+    public function findLowestRateByCarrier(string $carrier): ?ShippingLabelRate
+    {
+        $selectedRate = null;
+        $selectedAmount = null;
+        $normalizedCarrier = strtoupper($carrier);
+
+        foreach ($this->rates as $rate) {
+            if (strtoupper($rate->carrier()) !== $normalizedCarrier) {
+                continue;
+            }
+
+            $rateAmount = is_numeric($rate->rateAmount())
+                ? (float) $rate->rateAmount()
+                : INF;
+
+            if ($selectedRate === null || $rateAmount < $selectedAmount) {
+                $selectedRate = $rate;
+                $selectedAmount = $rateAmount;
+            }
+        }
+
+        return $selectedRate;
     }
 }

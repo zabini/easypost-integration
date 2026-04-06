@@ -3,6 +3,12 @@
 use App\Core\Domain\Exceptions\AuthenticationRequiredException;
 use App\Core\Domain\Exceptions\DuplicateEmailException;
 use App\Core\Domain\Exceptions\InvalidCredentialsException;
+use App\Core\Domain\Exceptions\ShippingLabelAddressNotSupportedException;
+use App\Core\Domain\Exceptions\ShippingLabelUspsRateUnavailableException;
+use App\Core\Domain\Exceptions\ShippingProviderAuthenticationException;
+use App\Core\Domain\Exceptions\ShippingProviderRequestException;
+use App\Core\Domain\Exceptions\ShippingProviderUnavailableException;
+use App\Core\Domain\Exceptions\ShippingProviderUnexpectedResponseException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -38,5 +44,42 @@ return Application::configure(basePath: dirname(__DIR__))
             return response()->json([
                 'message' => $exception->getMessage(),
             ], Response::HTTP_UNAUTHORIZED);
+        });
+
+        $exceptions->render(function (ShippingLabelAddressNotSupportedException $exception) {
+            return response()->json([
+                'message' => $exception->getMessage(),
+                'errors' => $exception->errors(),
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        });
+
+        $exceptions->render(function (ShippingLabelUspsRateUnavailableException $exception) {
+            return response()->json([
+                'message' => $exception->getMessage(),
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        });
+
+        $exceptions->render(function (ShippingProviderRequestException $exception) {
+            return response()->json([
+                'message' => $exception->getMessage(),
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        });
+
+        $exceptions->render(function (ShippingProviderAuthenticationException $exception) {
+            return response()->json([
+                'message' => $exception->getMessage(),
+            ], Response::HTTP_SERVICE_UNAVAILABLE);
+        });
+
+        $exceptions->render(function (ShippingProviderUnavailableException $exception) {
+            return response()->json([
+                'message' => $exception->getMessage(),
+            ], Response::HTTP_SERVICE_UNAVAILABLE);
+        });
+
+        $exceptions->render(function (ShippingProviderUnexpectedResponseException $exception) {
+            return response()->json([
+                'message' => $exception->getMessage(),
+            ], Response::HTTP_BAD_GATEWAY);
         });
     })->create();
