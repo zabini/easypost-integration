@@ -48,18 +48,6 @@ function createShippingLabelInitialState() {
   };
 }
 
-const ENDPOINTS = [
-  { action: 'sign', method: 'POST', path: '/auth/login' },
-  { action: 'sgnup', method: 'POST', path: '/auth/signup' },
-  { action: 'getAuthenticated', method: 'GET', path: '/auth/me' },
-  { action: 'signout', method: 'POST', path: '/auth/logout' },
-  {
-    action: 'createShippingLabel',
-    method: 'POST',
-    path: '/shipping-labels',
-  },
-];
-
 function getFirstError(errors, field) {
   const fieldErrors = errors[field];
 
@@ -369,38 +357,6 @@ function App() {
 
   return (
     <main className="app-shell">
-      <section className="hero-panel">
-        <div className="hero-copy">
-          <span className="eyebrow">Easy UI</span>
-          <h1>ShippingLabels com compra autenticada e contrato real da API.</h1>
-          <p className="hero-text">
-            O frontend usa sessao via cookie, consulta a identidade atual e
-            envia <code>from_address</code>, <code>to_address</code> e{' '}
-            <code>parcel</code> para o endpoint de criacao em
-            <code> api/routes/web.php</code>.
-          </p>
-        </div>
-
-        <div className="endpoint-card">
-          <div className="endpoint-card__header">
-            <span>Contrato observado</span>
-            <strong>Autenticacao e ShippingLabels</strong>
-          </div>
-
-          <ul className="endpoint-list">
-            {ENDPOINTS.map((endpoint) => (
-              <li className="endpoint-item" key={endpoint.action}>
-                <span className="endpoint-chip">{endpoint.method}</span>
-                <div>
-                  <strong>{endpoint.action}</strong>
-                  <p>{endpoint.path}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
-
       <section className="auth-panel">
         <div className="auth-card">
           <div className="auth-card__topbar">

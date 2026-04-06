@@ -1,155 +1,15 @@
 .app-shell {
   min-height: 100vh;
-  display: grid;
-  grid-template-columns: minmax(280px, 1.05fr) minmax(360px, 1.15fr);
 }
 
-.hero-panel {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 2rem;
-  padding: 4rem;
-  background:
-    radial-gradient(circle at top left, rgba(255, 209, 102, 0.24), transparent 32%),
-    radial-gradient(circle at bottom right, rgba(232, 93, 4, 0.2), transparent 28%),
-    linear-gradient(135deg, #0c1824 0%, #13293d 52%, #1b4965 100%);
-  color: #f5f3ef;
-  position: relative;
-  overflow: hidden;
-}
-
-.hero-panel::after {
-  content: '';
-  position: absolute;
-  inset: auto -10% -18% auto;
-  width: 280px;
-  height: 280px;
-  border-radius: 50%;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 158, 0, 0.28),
-    rgba(250, 237, 205, 0.04)
-  );
-  filter: blur(8px);
-}
-
-.hero-copy {
-  max-width: 40rem;
-  position: relative;
-  z-index: 1;
-}
-
-.eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.45rem 0.8rem;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 999px;
-  font-size: 0.76rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.hero-copy h1 {
-  margin: 1rem 0 1.2rem;
-  font-size: clamp(2.4rem, 4vw, 4.5rem);
-  line-height: 0.96;
-  letter-spacing: -0.05em;
-}
-
-.hero-text {
-  margin: 0;
-  max-width: 35rem;
-  color: rgba(245, 243, 239, 0.82);
-  font-size: 1.02rem;
-  line-height: 1.75;
-}
-
-.hero-text code,
 .profile-note code,
 .result-panel code {
   font-family: 'IBM Plex Mono', 'SFMono-Regular', monospace;
 }
 
-.endpoint-card {
-  width: min(100%, 38rem);
-  padding: 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 28px;
-  background: rgba(6, 16, 24, 0.32);
-  backdrop-filter: blur(18px);
-  position: relative;
-  z-index: 1;
-}
-
-.endpoint-card__header {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  margin-bottom: 1.2rem;
-}
-
-.endpoint-card__header span {
-  color: rgba(245, 243, 239, 0.58);
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-}
-
-.endpoint-card__header strong {
-  font-size: 1.2rem;
-  letter-spacing: -0.03em;
-}
-
-.endpoint-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 0.9rem;
-}
-
-.endpoint-item {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.9rem;
-  align-items: start;
-  padding: 0.95rem 1rem;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.endpoint-item strong {
-  display: block;
-  font-size: 1rem;
-}
-
-.endpoint-item p {
-  margin: 0.25rem 0 0;
-  color: rgba(245, 243, 239, 0.7);
-  font-family: 'IBM Plex Mono', 'SFMono-Regular', monospace;
-  font-size: 0.92rem;
-}
-
-.endpoint-chip {
-  display: inline-flex;
-  min-width: 4.5rem;
-  justify-content: center;
-  padding: 0.35rem 0.65rem;
-  border-radius: 999px;
-  background: #ffd166;
-  color: #311f10;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
 .auth-panel {
   display: flex;
+  min-height: 100vh;
   align-items: center;
   justify-content: center;
   padding: 2rem;
@@ -508,17 +368,8 @@
 }
 
 @media (max-width: 960px) {
-  .app-shell {
-    grid-template-columns: 1fr;
-  }
-
-  .hero-panel,
   .auth-panel {
     padding: 1.5rem;
-  }
-
-  .hero-copy h1 {
-    font-size: clamp(2rem, 10vw, 3rem);
   }
 
   .auth-card {
