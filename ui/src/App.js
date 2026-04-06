@@ -1,6 +1,9 @@
 import { useEffect, useEffectEvent, useState } from 'react';
 import { getAuthenticated, sign, sgnup, signout } from './api/auth';
-import { createShippingLabel } from './api/shippingLabels';
+import {
+  createShippingLabel,
+  listShippingLabels,
+} from './api/shippingLabels';
 import './App.css';
 
 function createSignInInitialState() {
@@ -122,12 +125,24 @@ function formatTimestamp(value) {
   }).format(parsedDate);
 }
 
+function formatParcel(parcel) {
+  if (!parcel) {
+    return '-';
+  }
+
+  return `${parcel.weight_oz ?? '-'} oz | ${parcel.length_in ?? '-'} x ${
+    parcel.width_in ?? '-'
+  } x ${parcel.height_in ?? '-'} in`;
+}
+
 function App() {
   const [mode, setMode] = useState('sign');
   const [status, setStatus] = useState('loading');
   const [user, setUser] = useState(null);
+  const [workspaceView, setWorkspaceView] = useState('list');
   const [isAuthSubmitting, setIsAuthSubmitting] = useState(false);
   const [isLabelSubmitting, setIsLabelSubmitting] = useState(false);
+  const [isShippingLabelsLoading, setIsShippingLabelsLoading] = useState(false);
   const [feedback, setFeedback] = useState(null);
   const [authFieldErrors, setAuthFieldErrors] = useState({});
   const [shippingFieldErrors, setShippingFieldErrors] = useState({});
@@ -137,6 +152,8 @@ function App() {
     createShippingLabelInitialState
   );
   const [createdLabel, setCreatedLabel] = useState(null);
+  const [shippingLabels, setShippingLabels] = useState([]);
+  const [hasLoadedShippingLabels, setHasLoadedShippingLabels] = useState(false);
 
   const clearFeedback = () => {
     setFeedback(null);
@@ -148,21 +165,34 @@ function App() {
     setCreatedLabel(null);
   };
 
+  const resetShippingLabelsState = () => {
+    setShippingLabels([]);
+    setHasLoadedShippingLabels(false);
+    setIsShippingLabelsLoading(false);
+  };
+
+  const invalidateShippingLabels = () => {
+    setHasLoadedShippingLabels(false);
+  };
+
   const loadAuthenticatedUser = useEffectEvent(async () => {
     try {
       const authenticatedUser = await getAuthenticated();
 
       setUser(authenticatedUser);
       setStatus('authenticated');
+      setWorkspaceView('list');
     } catch (error) {
       if (error.status === 401) {
         setUser(null);
         setStatus('guest');
+        resetShippingLabelsState();
         return;
       }
 
       setUser(null);
       setStatus('guest');
+      resetShippingLabelsState();
       setFeedback({
         tone: 'danger',
         message:
@@ -175,10 +205,47 @@ function App() {
     loadAuthenticatedUser();
   }, [loadAuthenticatedUser]);
 
+  const loadShippingLabels = useEffectEvent(async () => {
+    setIsShippingLabelsLoading(true);
+
+    try {
+      const labels = await listShippingLabels();
+
+      setShippingLabels(labels);
+      setHasLoadedShippingLabels(true);
+    } catch (error) {
+      if (error.status === 401) {
+        setUser(null);
+        setStatus('guest');
+        setMode('sign');
+        setWorkspaceView('list');
+        resetShippingWorkspace();
+        resetShippingLabelsState();
+        setFeedback({
+          tone: 'danger',
+          message: 'Sua sessao expirou. Entre novamente para continuar.',
+        });
+        return;
+      }
+
+      setFeedback({
+        tone: 'danger',
+        message: error.message || 'Falha ao listar suas entregas.',
+      });
+      setHasLoadedShippingLabels(true);
+    } finally {
+      setIsShippingLabelsLoading(false);
+    }
+  });
+
   const handleModeChange = (nextMode) => {
     clearFeedback();
     setAuthFieldErrors({});
     setMode(nextMode);
+  };
+
+  const handleWorkspaceViewChange = (nextView) => {
+    setWorkspaceView(nextView);
   };
 
   const handleSignInChange = (event) => {
@@ -237,8 +304,10 @@ function App() {
 
       setUser(authenticatedUser);
       setStatus('authenticated');
+      setWorkspaceView('list');
       setSignInForm(createSignInInitialState());
       resetShippingWorkspace();
+      resetShippingLabelsState();
       setFeedback({
         tone: 'success',
         message: 'Sessao iniciada com sucesso.',
@@ -270,8 +339,10 @@ function App() {
 
       setUser(authenticatedUser);
       setStatus('authenticated');
+      setWorkspaceView('list');
       setSignUpForm(createSignUpInitialState());
       resetShippingWorkspace();
+      resetShippingLabelsState();
       setFeedback({
         tone: 'success',
         message: 'Conta criada e autenticada com sucesso.',
@@ -297,8 +368,10 @@ function App() {
       setUser(null);
       setStatus('guest');
       setMode('sign');
+      setWorkspaceView('list');
       setAuthFieldErrors({});
       resetShippingWorkspace();
+      resetShippingLabelsState();
       setFeedback({
         tone: 'neutral',
         message: 'Sessao encerrada com sucesso.',
@@ -326,6 +399,7 @@ function App() {
 
       setCreatedLabel(shippingLabel);
       setShippingLabelForm(createShippingLabelInitialState());
+      invalidateShippingLabels();
       setFeedback({
         tone: 'success',
         message: 'Shipping label criada com sucesso.',
@@ -335,7 +409,9 @@ function App() {
         setUser(null);
         setStatus('guest');
         setMode('sign');
+        setWorkspaceView('list');
         setCreatedLabel(null);
+        resetShippingLabelsState();
         setFeedback({
           tone: 'danger',
           message: 'Sua sessao expirou. Entre novamente para continuar.',
@@ -355,6 +431,23 @@ function App() {
 
   const isAuthenticated = status === 'authenticated' && user !== null;
 
+  useEffect(() => {
+    if (
+      !isAuthenticated ||
+      workspaceView !== 'list' ||
+      hasLoadedShippingLabels
+    ) {
+      return;
+    }
+
+    loadShippingLabels();
+  }, [
+    hasLoadedShippingLabels,
+    isAuthenticated,
+    loadShippingLabels,
+    workspaceView,
+  ]);
+
   return (
     <main className="app-shell">
       <section className="auth-panel">
@@ -366,7 +459,9 @@ function App() {
                 {status === 'loading'
                   ? 'Verificando autenticacao'
                   : isAuthenticated
-                    ? 'Criar ShippingLabels'
+                    ? workspaceView === 'list'
+                      ? 'Minhas entregas'
+                      : 'Criar ShippingLabels'
                     : 'Acesse sua conta'}
               </h2>
             </div>
@@ -413,412 +508,650 @@ function App() {
                 </button>
               </div>
 
-              <div className="profile-note">
-                <code>POST /shipping-labels</code> cria o shipment, escolhe a
-                menor tarifa USPS disponivel e devolve a etiqueta comprada com
-                tracking, carrier, service e <code>label_url</code>.
+              <div className="workspace-nav" role="tablist" aria-label="Telas">
+                <button
+                  aria-selected={workspaceView === 'list'}
+                  className={
+                    workspaceView === 'list'
+                      ? 'workspace-nav__button is-active'
+                      : 'workspace-nav__button'
+                  }
+                  onClick={() => handleWorkspaceViewChange('list')}
+                  role="tab"
+                  type="button"
+                >
+                  Listar entregas
+                </button>
+                <button
+                  aria-selected={workspaceView === 'create'}
+                  className={
+                    workspaceView === 'create'
+                      ? 'workspace-nav__button is-active'
+                      : 'workspace-nav__button'
+                  }
+                  onClick={() => handleWorkspaceViewChange('create')}
+                  role="tab"
+                  type="button"
+                >
+                  Nova entrega
+                </button>
               </div>
 
-              <form className="shipping-form" onSubmit={handleShippingLabelSubmit}>
-                <section className="form-section">
+              {workspaceView === 'list' ? (
+                <section className="shipping-list-panel" aria-live="polite">
                   <div className="section-heading">
-                    <p>Remetente</p>
-                    <span>from_address</span>
+                    <p>Minhas entregas</p>
+                    <div className="section-heading__actions">
+                      <span>GET /shipping-labels</span>
+                      <button
+                        className="secondary-button"
+                        disabled={isShippingLabelsLoading || isLabelSubmitting}
+                        onClick={() => {
+                          clearFeedback();
+                          invalidateShippingLabels();
+                        }}
+                        type="button"
+                      >
+                        {isShippingLabelsLoading ? 'Atualizando...' : 'Atualizar'}
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="field-grid field-grid--address">
-                    <label className="field">
-                      <span>Nome</span>
-                      <input
-                        name="name"
-                        onChange={handleShippingAddressChange('fromAddress')}
-                        placeholder="Jane Sender"
-                        type="text"
-                        value={shippingLabelForm.fromAddress.name}
-                      />
-                      {getFirstError(shippingFieldErrors, 'from_address.name') ? (
-                        <small>
-                          {getFirstError(shippingFieldErrors, 'from_address.name')}
-                        </small>
-                      ) : null}
-                    </label>
+                  {isShippingLabelsLoading ? (
+                    <div className="empty-state">
+                      Carregando suas entregas cadastradas...
+                    </div>
+                  ) : shippingLabels.length > 0 ? (
+                    <div className="shipping-list">
+                      {shippingLabels.map((shippingLabel) => (
+                        <article className="shipping-card" key={shippingLabel.id}>
+                          <div className="shipping-card__header">
+                            <div>
+                              <p className="shipping-card__eyebrow">
+                                Entrega #{shippingLabel.id}
+                              </p>
+                              <h3>
+                                {shippingLabel.tracking_code || 'Tracking pendente'}
+                              </h3>
+                            </div>
+                            <span className="shipping-card__status">
+                              {shippingLabel.status}
+                            </span>
+                          </div>
 
-                    <label className="field field--full">
-                      <span>Street 1</span>
-                      <input
-                        name="street1"
-                        onChange={handleShippingAddressChange('fromAddress')}
-                        placeholder="417 Montgomery Street"
-                        type="text"
-                        value={shippingLabelForm.fromAddress.street1}
-                      />
-                      {getFirstError(shippingFieldErrors, 'from_address.street1') ? (
-                        <small>
+                          <div className="result-grid">
+                            <article className="result-item">
+                              <span>Servico</span>
+                              <strong>
+                                {shippingLabel.carrier} / {shippingLabel.service}
+                              </strong>
+                            </article>
+                            <article className="result-item">
+                              <span>Valor</span>
+                              <strong>
+                                {formatMoney(
+                                  shippingLabel.rate_amount,
+                                  shippingLabel.rate_currency
+                                )}
+                              </strong>
+                            </article>
+                            <article className="result-item">
+                              <span>Pacote</span>
+                              <strong>{formatParcel(shippingLabel.parcel)}</strong>
+                            </article>
+                            <article className="result-item">
+                              <span>Criada em</span>
+                              <strong>
+                                {formatTimestamp(shippingLabel.created_at)}
+                              </strong>
+                            </article>
+                            <article className="result-item result-item--wide">
+                              <span>Origem</span>
+                              <strong>
+                                {formatAddress(shippingLabel.from_address)}
+                              </strong>
+                            </article>
+                            <article className="result-item result-item--wide">
+                              <span>Destino</span>
+                              <strong>
+                                {formatAddress(shippingLabel.to_address)}
+                              </strong>
+                            </article>
+                          </div>
+
+                          {shippingLabel.label_url ? (
+                            <a
+                              className="result-link"
+                              href={shippingLabel.label_url}
+                              rel="noreferrer"
+                              target="_blank"
+                            >
+                              Abrir etiqueta
+                            </a>
+                          ) : null}
+                        </article>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="empty-state">
+                      <p>Nenhuma entrega encontrada para a sua conta.</p>
+                      <button
+                        className="primary-button empty-state__button"
+                        onClick={() => handleWorkspaceViewChange('create')}
+                        type="button"
+                      >
+                        Criar nova entrega
+                      </button>
+                    </div>
+                  )}
+                </section>
+              ) : (
+                <>
+                  <div className="profile-note">
+                    <code>POST /shipping-labels</code> cria o shipment, escolhe
+                    a menor tarifa USPS disponivel e devolve a etiqueta comprada
+                    com tracking, carrier, service e <code>label_url</code>.
+                  </div>
+
+                  <form
+                    className="shipping-form"
+                    onSubmit={handleShippingLabelSubmit}
+                  >
+                    <section className="form-section">
+                      <div className="section-heading">
+                        <p>Remetente</p>
+                        <span>from_address</span>
+                      </div>
+
+                      <div className="field-grid field-grid--address">
+                        <label className="field">
+                          <span>Nome</span>
+                          <input
+                            name="name"
+                            onChange={handleShippingAddressChange('fromAddress')}
+                            placeholder="Jane Sender"
+                            type="text"
+                            value={shippingLabelForm.fromAddress.name}
+                          />
+                          {getFirstError(
+                            shippingFieldErrors,
+                            'from_address.name'
+                          ) ? (
+                            <small>
+                              {getFirstError(
+                                shippingFieldErrors,
+                                'from_address.name'
+                              )}
+                            </small>
+                          ) : null}
+                        </label>
+
+                        <label className="field field--full">
+                          <span>Street 1</span>
+                          <input
+                            name="street1"
+                            onChange={handleShippingAddressChange('fromAddress')}
+                            placeholder="417 Montgomery Street"
+                            type="text"
+                            value={shippingLabelForm.fromAddress.street1}
+                          />
                           {getFirstError(
                             shippingFieldErrors,
                             'from_address.street1'
-                          )}
-                        </small>
-                      ) : null}
-                    </label>
+                          ) ? (
+                            <small>
+                              {getFirstError(
+                                shippingFieldErrors,
+                                'from_address.street1'
+                              )}
+                            </small>
+                          ) : null}
+                        </label>
 
-                    <label className="field field--full">
-                      <span>Street 2</span>
-                      <input
-                        name="street2"
-                        onChange={handleShippingAddressChange('fromAddress')}
-                        placeholder="Suite 400"
-                        type="text"
-                        value={shippingLabelForm.fromAddress.street2}
-                      />
-                    </label>
+                        <label className="field field--full">
+                          <span>Street 2</span>
+                          <input
+                            name="street2"
+                            onChange={handleShippingAddressChange('fromAddress')}
+                            placeholder="Suite 400"
+                            type="text"
+                            value={shippingLabelForm.fromAddress.street2}
+                          />
+                        </label>
 
-                    <label className="field">
-                      <span>Cidade</span>
-                      <input
-                        name="city"
-                        onChange={handleShippingAddressChange('fromAddress')}
-                        placeholder="San Francisco"
-                        type="text"
-                        value={shippingLabelForm.fromAddress.city}
-                      />
-                      {getFirstError(shippingFieldErrors, 'from_address.city') ? (
-                        <small>
-                          {getFirstError(shippingFieldErrors, 'from_address.city')}
-                        </small>
-                      ) : null}
-                    </label>
+                        <label className="field">
+                          <span>Cidade</span>
+                          <input
+                            name="city"
+                            onChange={handleShippingAddressChange('fromAddress')}
+                            placeholder="San Francisco"
+                            type="text"
+                            value={shippingLabelForm.fromAddress.city}
+                          />
+                          {getFirstError(
+                            shippingFieldErrors,
+                            'from_address.city'
+                          ) ? (
+                            <small>
+                              {getFirstError(
+                                shippingFieldErrors,
+                                'from_address.city'
+                              )}
+                            </small>
+                          ) : null}
+                        </label>
 
-                    <label className="field">
-                      <span>Estado</span>
-                      <input
-                        maxLength="2"
-                        name="state"
-                        onChange={handleShippingAddressChange('fromAddress')}
-                        placeholder="CA"
-                        type="text"
-                        value={shippingLabelForm.fromAddress.state}
-                      />
-                      {getFirstError(shippingFieldErrors, 'from_address.state') ? (
-                        <small>
-                          {getFirstError(shippingFieldErrors, 'from_address.state')}
-                        </small>
-                      ) : null}
-                    </label>
+                        <label className="field">
+                          <span>Estado</span>
+                          <input
+                            maxLength="2"
+                            name="state"
+                            onChange={handleShippingAddressChange('fromAddress')}
+                            placeholder="CA"
+                            type="text"
+                            value={shippingLabelForm.fromAddress.state}
+                          />
+                          {getFirstError(
+                            shippingFieldErrors,
+                            'from_address.state'
+                          ) ? (
+                            <small>
+                              {getFirstError(
+                                shippingFieldErrors,
+                                'from_address.state'
+                              )}
+                            </small>
+                          ) : null}
+                        </label>
 
-                    <label className="field">
-                      <span>ZIP</span>
-                      <input
-                        inputMode="numeric"
-                        name="zip"
-                        onChange={handleShippingAddressChange('fromAddress')}
-                        placeholder="94104"
-                        type="text"
-                        value={shippingLabelForm.fromAddress.zip}
-                      />
-                      {getFirstError(shippingFieldErrors, 'from_address.zip') ? (
-                        <small>
-                          {getFirstError(shippingFieldErrors, 'from_address.zip')}
-                        </small>
-                      ) : null}
-                    </label>
+                        <label className="field">
+                          <span>ZIP</span>
+                          <input
+                            inputMode="numeric"
+                            name="zip"
+                            onChange={handleShippingAddressChange('fromAddress')}
+                            placeholder="94104"
+                            type="text"
+                            value={shippingLabelForm.fromAddress.zip}
+                          />
+                          {getFirstError(
+                            shippingFieldErrors,
+                            'from_address.zip'
+                          ) ? (
+                            <small>
+                              {getFirstError(
+                                shippingFieldErrors,
+                                'from_address.zip'
+                              )}
+                            </small>
+                          ) : null}
+                        </label>
 
-                    <label className="field">
-                      <span>Pais</span>
-                      <select
-                        name="country"
-                        onChange={handleShippingAddressChange('fromAddress')}
-                        value={shippingLabelForm.fromAddress.country}
-                      >
-                        <option value="US">US</option>
-                      </select>
-                      {getFirstError(shippingFieldErrors, 'from_address.country') ? (
-                        <small>
+                        <label className="field">
+                          <span>Pais</span>
+                          <select
+                            name="country"
+                            onChange={handleShippingAddressChange('fromAddress')}
+                            value={shippingLabelForm.fromAddress.country}
+                          >
+                            <option value="US">US</option>
+                          </select>
                           {getFirstError(
                             shippingFieldErrors,
                             'from_address.country'
-                          )}
-                        </small>
-                      ) : null}
-                    </label>
-                  </div>
-                </section>
+                          ) ? (
+                            <small>
+                              {getFirstError(
+                                shippingFieldErrors,
+                                'from_address.country'
+                              )}
+                            </small>
+                          ) : null}
+                        </label>
+                      </div>
+                    </section>
 
-                <section className="form-section">
-                  <div className="section-heading">
-                    <p>Destinatario</p>
-                    <span>to_address</span>
-                  </div>
+                    <section className="form-section">
+                      <div className="section-heading">
+                        <p>Destinatario</p>
+                        <span>to_address</span>
+                      </div>
 
-                  <div className="field-grid field-grid--address">
-                    <label className="field">
-                      <span>Nome</span>
-                      <input
-                        name="name"
-                        onChange={handleShippingAddressChange('toAddress')}
-                        placeholder="John Receiver"
-                        type="text"
-                        value={shippingLabelForm.toAddress.name}
-                      />
-                      {getFirstError(shippingFieldErrors, 'to_address.name') ? (
-                        <small>
-                          {getFirstError(shippingFieldErrors, 'to_address.name')}
-                        </small>
-                      ) : null}
-                    </label>
+                      <div className="field-grid field-grid--address">
+                        <label className="field">
+                          <span>Nome</span>
+                          <input
+                            name="name"
+                            onChange={handleShippingAddressChange('toAddress')}
+                            placeholder="John Receiver"
+                            type="text"
+                            value={shippingLabelForm.toAddress.name}
+                          />
+                          {getFirstError(
+                            shippingFieldErrors,
+                            'to_address.name'
+                          ) ? (
+                            <small>
+                              {getFirstError(
+                                shippingFieldErrors,
+                                'to_address.name'
+                              )}
+                            </small>
+                          ) : null}
+                        </label>
 
-                    <label className="field field--full">
-                      <span>Street 1</span>
-                      <input
-                        name="street1"
-                        onChange={handleShippingAddressChange('toAddress')}
-                        placeholder="388 Townsend St"
-                        type="text"
-                        value={shippingLabelForm.toAddress.street1}
-                      />
-                      {getFirstError(shippingFieldErrors, 'to_address.street1') ? (
-                        <small>
-                          {getFirstError(shippingFieldErrors, 'to_address.street1')}
-                        </small>
-                      ) : null}
-                    </label>
+                        <label className="field field--full">
+                          <span>Street 1</span>
+                          <input
+                            name="street1"
+                            onChange={handleShippingAddressChange('toAddress')}
+                            placeholder="388 Townsend St"
+                            type="text"
+                            value={shippingLabelForm.toAddress.street1}
+                          />
+                          {getFirstError(
+                            shippingFieldErrors,
+                            'to_address.street1'
+                          ) ? (
+                            <small>
+                              {getFirstError(
+                                shippingFieldErrors,
+                                'to_address.street1'
+                              )}
+                            </small>
+                          ) : null}
+                        </label>
 
-                    <label className="field field--full">
-                      <span>Street 2</span>
-                      <input
-                        name="street2"
-                        onChange={handleShippingAddressChange('toAddress')}
-                        placeholder="Apartment 12"
-                        type="text"
-                        value={shippingLabelForm.toAddress.street2}
-                      />
-                    </label>
+                        <label className="field field--full">
+                          <span>Street 2</span>
+                          <input
+                            name="street2"
+                            onChange={handleShippingAddressChange('toAddress')}
+                            placeholder="Apartment 12"
+                            type="text"
+                            value={shippingLabelForm.toAddress.street2}
+                          />
+                        </label>
 
-                    <label className="field">
-                      <span>Cidade</span>
-                      <input
-                        name="city"
-                        onChange={handleShippingAddressChange('toAddress')}
-                        placeholder="San Francisco"
-                        type="text"
-                        value={shippingLabelForm.toAddress.city}
-                      />
-                      {getFirstError(shippingFieldErrors, 'to_address.city') ? (
-                        <small>
-                          {getFirstError(shippingFieldErrors, 'to_address.city')}
-                        </small>
-                      ) : null}
-                    </label>
+                        <label className="field">
+                          <span>Cidade</span>
+                          <input
+                            name="city"
+                            onChange={handleShippingAddressChange('toAddress')}
+                            placeholder="San Francisco"
+                            type="text"
+                            value={shippingLabelForm.toAddress.city}
+                          />
+                          {getFirstError(
+                            shippingFieldErrors,
+                            'to_address.city'
+                          ) ? (
+                            <small>
+                              {getFirstError(
+                                shippingFieldErrors,
+                                'to_address.city'
+                              )}
+                            </small>
+                          ) : null}
+                        </label>
 
-                    <label className="field">
-                      <span>Estado</span>
-                      <input
-                        maxLength="2"
-                        name="state"
-                        onChange={handleShippingAddressChange('toAddress')}
-                        placeholder="CA"
-                        type="text"
-                        value={shippingLabelForm.toAddress.state}
-                      />
-                      {getFirstError(shippingFieldErrors, 'to_address.state') ? (
-                        <small>
-                          {getFirstError(shippingFieldErrors, 'to_address.state')}
-                        </small>
-                      ) : null}
-                    </label>
+                        <label className="field">
+                          <span>Estado</span>
+                          <input
+                            maxLength="2"
+                            name="state"
+                            onChange={handleShippingAddressChange('toAddress')}
+                            placeholder="CA"
+                            type="text"
+                            value={shippingLabelForm.toAddress.state}
+                          />
+                          {getFirstError(
+                            shippingFieldErrors,
+                            'to_address.state'
+                          ) ? (
+                            <small>
+                              {getFirstError(
+                                shippingFieldErrors,
+                                'to_address.state'
+                              )}
+                            </small>
+                          ) : null}
+                        </label>
 
-                    <label className="field">
-                      <span>ZIP</span>
-                      <input
-                        inputMode="numeric"
-                        name="zip"
-                        onChange={handleShippingAddressChange('toAddress')}
-                        placeholder="94107"
-                        type="text"
-                        value={shippingLabelForm.toAddress.zip}
-                      />
-                      {getFirstError(shippingFieldErrors, 'to_address.zip') ? (
-                        <small>
-                          {getFirstError(shippingFieldErrors, 'to_address.zip')}
-                        </small>
-                      ) : null}
-                    </label>
+                        <label className="field">
+                          <span>ZIP</span>
+                          <input
+                            inputMode="numeric"
+                            name="zip"
+                            onChange={handleShippingAddressChange('toAddress')}
+                            placeholder="94107"
+                            type="text"
+                            value={shippingLabelForm.toAddress.zip}
+                          />
+                          {getFirstError(
+                            shippingFieldErrors,
+                            'to_address.zip'
+                          ) ? (
+                            <small>
+                              {getFirstError(
+                                shippingFieldErrors,
+                                'to_address.zip'
+                              )}
+                            </small>
+                          ) : null}
+                        </label>
 
-                    <label className="field">
-                      <span>Pais</span>
-                      <select
-                        name="country"
-                        onChange={handleShippingAddressChange('toAddress')}
-                        value={shippingLabelForm.toAddress.country}
-                      >
-                        <option value="US">US</option>
-                      </select>
-                      {getFirstError(shippingFieldErrors, 'to_address.country') ? (
-                        <small>
-                          {getFirstError(shippingFieldErrors, 'to_address.country')}
-                        </small>
-                      ) : null}
-                    </label>
-                  </div>
-                </section>
+                        <label className="field">
+                          <span>Pais</span>
+                          <select
+                            name="country"
+                            onChange={handleShippingAddressChange('toAddress')}
+                            value={shippingLabelForm.toAddress.country}
+                          >
+                            <option value="US">US</option>
+                          </select>
+                          {getFirstError(
+                            shippingFieldErrors,
+                            'to_address.country'
+                          ) ? (
+                            <small>
+                              {getFirstError(
+                                shippingFieldErrors,
+                                'to_address.country'
+                              )}
+                            </small>
+                          ) : null}
+                        </label>
+                      </div>
+                    </section>
 
-                <section className="form-section">
-                  <div className="section-heading">
-                    <p>Pacote</p>
-                    <span>parcel</span>
-                  </div>
+                    <section className="form-section">
+                      <div className="section-heading">
+                        <p>Pacote</p>
+                        <span>parcel</span>
+                      </div>
 
-                  <div className="field-grid field-grid--parcel">
-                    <label className="field">
-                      <span>Peso (oz)</span>
-                      <input
-                        min="0"
-                        name="weightOz"
-                        onChange={handleParcelChange}
-                        step="0.01"
-                        type="number"
-                        value={shippingLabelForm.parcel.weightOz}
-                      />
-                      {getFirstError(shippingFieldErrors, 'parcel.weight_oz') ? (
-                        <small>
-                          {getFirstError(shippingFieldErrors, 'parcel.weight_oz')}
-                        </small>
-                      ) : null}
-                    </label>
+                      <div className="field-grid field-grid--parcel">
+                        <label className="field">
+                          <span>Peso (oz)</span>
+                          <input
+                            min="0"
+                            name="weightOz"
+                            onChange={handleParcelChange}
+                            step="0.01"
+                            type="number"
+                            value={shippingLabelForm.parcel.weightOz}
+                          />
+                          {getFirstError(
+                            shippingFieldErrors,
+                            'parcel.weight_oz'
+                          ) ? (
+                            <small>
+                              {getFirstError(
+                                shippingFieldErrors,
+                                'parcel.weight_oz'
+                              )}
+                            </small>
+                          ) : null}
+                        </label>
 
-                    <label className="field">
-                      <span>Comprimento (in)</span>
-                      <input
-                        min="0"
-                        name="lengthIn"
-                        onChange={handleParcelChange}
-                        step="0.01"
-                        type="number"
-                        value={shippingLabelForm.parcel.lengthIn}
-                      />
-                      {getFirstError(shippingFieldErrors, 'parcel.length_in') ? (
-                        <small>
-                          {getFirstError(shippingFieldErrors, 'parcel.length_in')}
-                        </small>
-                      ) : null}
-                    </label>
+                        <label className="field">
+                          <span>Comprimento (in)</span>
+                          <input
+                            min="0"
+                            name="lengthIn"
+                            onChange={handleParcelChange}
+                            step="0.01"
+                            type="number"
+                            value={shippingLabelForm.parcel.lengthIn}
+                          />
+                          {getFirstError(
+                            shippingFieldErrors,
+                            'parcel.length_in'
+                          ) ? (
+                            <small>
+                              {getFirstError(
+                                shippingFieldErrors,
+                                'parcel.length_in'
+                              )}
+                            </small>
+                          ) : null}
+                        </label>
 
-                    <label className="field">
-                      <span>Largura (in)</span>
-                      <input
-                        min="0"
-                        name="widthIn"
-                        onChange={handleParcelChange}
-                        step="0.01"
-                        type="number"
-                        value={shippingLabelForm.parcel.widthIn}
-                      />
-                      {getFirstError(shippingFieldErrors, 'parcel.width_in') ? (
-                        <small>
-                          {getFirstError(shippingFieldErrors, 'parcel.width_in')}
-                        </small>
-                      ) : null}
-                    </label>
+                        <label className="field">
+                          <span>Largura (in)</span>
+                          <input
+                            min="0"
+                            name="widthIn"
+                            onChange={handleParcelChange}
+                            step="0.01"
+                            type="number"
+                            value={shippingLabelForm.parcel.widthIn}
+                          />
+                          {getFirstError(
+                            shippingFieldErrors,
+                            'parcel.width_in'
+                          ) ? (
+                            <small>
+                              {getFirstError(
+                                shippingFieldErrors,
+                                'parcel.width_in'
+                              )}
+                            </small>
+                          ) : null}
+                        </label>
 
-                    <label className="field">
-                      <span>Altura (in)</span>
-                      <input
-                        min="0"
-                        name="heightIn"
-                        onChange={handleParcelChange}
-                        step="0.01"
-                        type="number"
-                        value={shippingLabelForm.parcel.heightIn}
-                      />
-                      {getFirstError(shippingFieldErrors, 'parcel.height_in') ? (
-                        <small>
-                          {getFirstError(shippingFieldErrors, 'parcel.height_in')}
-                        </small>
-                      ) : null}
-                    </label>
-                  </div>
-                </section>
+                        <label className="field">
+                          <span>Altura (in)</span>
+                          <input
+                            min="0"
+                            name="heightIn"
+                            onChange={handleParcelChange}
+                            step="0.01"
+                            type="number"
+                            value={shippingLabelForm.parcel.heightIn}
+                          />
+                          {getFirstError(
+                            shippingFieldErrors,
+                            'parcel.height_in'
+                          ) ? (
+                            <small>
+                              {getFirstError(
+                                shippingFieldErrors,
+                                'parcel.height_in'
+                              )}
+                            </small>
+                          ) : null}
+                        </label>
+                      </div>
+                    </section>
 
-                <button
-                  className="primary-button shipping-form__submit"
-                  disabled={isLabelSubmitting || isAuthSubmitting}
-                  type="submit"
-                >
-                  {isLabelSubmitting
-                    ? 'Criando shipping label...'
-                    : 'Criar shipping label'}
-                </button>
-              </form>
-
-              {createdLabel ? (
-                <section className="result-panel" aria-live="polite">
-                  <div className="section-heading">
-                    <p>Resultado</p>
-                    <span>shipping_labels.data</span>
-                  </div>
-
-                  <div className="result-grid">
-                    <article className="result-item">
-                      <span>Status</span>
-                      <strong>{createdLabel.status}</strong>
-                    </article>
-                    <article className="result-item">
-                      <span>Tracking</span>
-                      <strong>{createdLabel.tracking_code || '-'}</strong>
-                    </article>
-                    <article className="result-item">
-                      <span>Servico</span>
-                      <strong>
-                        {createdLabel.carrier} / {createdLabel.service}
-                      </strong>
-                    </article>
-                    <article className="result-item">
-                      <span>Valor</span>
-                      <strong>
-                        {formatMoney(
-                          createdLabel.rate_amount,
-                          createdLabel.rate_currency
-                        )}
-                      </strong>
-                    </article>
-                    <article className="result-item result-item--wide">
-                      <span>Origem</span>
-                      <strong>{formatAddress(createdLabel.from_address)}</strong>
-                    </article>
-                    <article className="result-item result-item--wide">
-                      <span>Destino</span>
-                      <strong>{formatAddress(createdLabel.to_address)}</strong>
-                    </article>
-                    <article className="result-item">
-                      <span>Shipment ID</span>
-                      <strong>{createdLabel.easypost_shipment_id}</strong>
-                    </article>
-                    <article className="result-item">
-                      <span>Rate ID</span>
-                      <strong>{createdLabel.easypost_rate_id}</strong>
-                    </article>
-                    <article className="result-item result-item--wide">
-                      <span>Criada em</span>
-                      <strong>{formatTimestamp(createdLabel.created_at)}</strong>
-                    </article>
-                  </div>
-
-                  {createdLabel.label_url ? (
-                    <a
-                      className="result-link"
-                      href={createdLabel.label_url}
-                      rel="noreferrer"
-                      target="_blank"
+                    <button
+                      className="primary-button shipping-form__submit"
+                      disabled={isLabelSubmitting || isAuthSubmitting}
+                      type="submit"
                     >
-                      Abrir label_url
-                    </a>
-                  ) : null}
-                </section>
-              ) : (
-                <section className="result-panel result-panel--empty">
-                  Preencha remetente, destinatario e pacote para criar a
-                  ShippingLabel via <code>POST /shipping-labels</code>.
-                </section>
+                      {isLabelSubmitting
+                        ? 'Criando shipping label...'
+                        : 'Criar shipping label'}
+                    </button>
+                  </form>
+
+                  {createdLabel ? (
+                    <section className="result-panel" aria-live="polite">
+                      <div className="section-heading">
+                        <p>Resultado</p>
+                        <span>shipping_labels.data</span>
+                      </div>
+
+                      <div className="result-grid">
+                        <article className="result-item">
+                          <span>Status</span>
+                          <strong>{createdLabel.status}</strong>
+                        </article>
+                        <article className="result-item">
+                          <span>Tracking</span>
+                          <strong>{createdLabel.tracking_code || '-'}</strong>
+                        </article>
+                        <article className="result-item">
+                          <span>Servico</span>
+                          <strong>
+                            {createdLabel.carrier} / {createdLabel.service}
+                          </strong>
+                        </article>
+                        <article className="result-item">
+                          <span>Valor</span>
+                          <strong>
+                            {formatMoney(
+                              createdLabel.rate_amount,
+                              createdLabel.rate_currency
+                            )}
+                          </strong>
+                        </article>
+                        <article className="result-item result-item--wide">
+                          <span>Origem</span>
+                          <strong>
+                            {formatAddress(createdLabel.from_address)}
+                          </strong>
+                        </article>
+                        <article className="result-item result-item--wide">
+                          <span>Destino</span>
+                          <strong>{formatAddress(createdLabel.to_address)}</strong>
+                        </article>
+                        <article className="result-item">
+                          <span>Shipment ID</span>
+                          <strong>{createdLabel.easypost_shipment_id}</strong>
+                        </article>
+                        <article className="result-item">
+                          <span>Rate ID</span>
+                          <strong>{createdLabel.easypost_rate_id}</strong>
+                        </article>
+                        <article className="result-item result-item--wide">
+                          <span>Criada em</span>
+                          <strong>
+                            {formatTimestamp(createdLabel.created_at)}
+                          </strong>
+                        </article>
+                      </div>
+
+                      {createdLabel.label_url ? (
+                        <a
+                          className="result-link"
+                          href={createdLabel.label_url}
+                          rel="noreferrer"
+                          target="_blank"
+                        >
+                          Abrir label_url
+                        </a>
+                      ) : null}
+                    </section>
+                  ) : (
+                    <section className="result-panel result-panel--empty">
+                      Preencha remetente, destinatario e pacote para criar a
+                      ShippingLabel via <code>POST /shipping-labels</code>.
+                    </section>
+                  )}
+                </>
               )}
             </div>
           ) : (
