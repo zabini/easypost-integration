@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { getAuthenticated, sign, sgnup, signout } from './api/auth';
 import {
   createShippingLabel,
@@ -82,6 +82,18 @@ function toShippingLabelPayload(form) {
       height_in: normalizeNumber(form.parcel.heightIn),
     },
   };
+}
+
+let authenticatedUserRequest = null;
+
+async function loadInitialAuthenticatedUser() {
+  if (!authenticatedUserRequest) {
+    authenticatedUserRequest = getAuthenticated().finally(() => {
+      authenticatedUserRequest = null;
+    });
+  }
+
+  return authenticatedUserRequest;
 }
 
 function formatAddress(address) {
@@ -175,68 +187,53 @@ function App() {
     setHasLoadedShippingLabels(false);
   };
 
-  const loadAuthenticatedUser = useEffectEvent(async () => {
-    try {
-      const authenticatedUser = await getAuthenticated();
-
-      setUser(authenticatedUser);
-      setStatus('authenticated');
-      setWorkspaceView('list');
-    } catch (error) {
-      if (error.status === 401) {
-        setUser(null);
-        setStatus('guest');
-        resetShippingLabelsState();
-        return;
-      }
-
-      setUser(null);
-      setStatus('guest');
-      resetShippingLabelsState();
-      setFeedback({
-        tone: 'danger',
-        message:
-          error.message || 'Unable to validate the session with the API.',
-      });
-    }
-  });
-
   useEffect(() => {
-    loadAuthenticatedUser();
-  }, [loadAuthenticatedUser]);
+    let isCancelled = false;
 
-  const loadShippingLabels = useEffectEvent(async () => {
-    setIsShippingLabelsLoading(true);
+    async function initializeAuthenticatedSession() {
+      try {
+        const authenticatedUser = await loadInitialAuthenticatedUser();
 
-    try {
-      const labels = await listShippingLabels();
+        if (isCancelled) {
+          return;
+        }
 
-      setShippingLabels(labels);
-      setHasLoadedShippingLabels(true);
-    } catch (error) {
-      if (error.status === 401) {
+        if (!authenticatedUser) {
+          setUser(null);
+          setStatus('guest');
+          resetShippingLabelsState();
+          return;
+        }
+
+        setUser(authenticatedUser);
+        setStatus('authenticated');
+      } catch (error) {
+        if (isCancelled) {
+          return;
+        }
+
         setUser(null);
         setStatus('guest');
-        setMode('sign');
-        setWorkspaceView('list');
-        resetShippingWorkspace();
         resetShippingLabelsState();
+
+        if (error.status === 401) {
+          return;
+        }
+
         setFeedback({
           tone: 'danger',
-          message: 'Your session has expired. Sign in again to continue.',
+          message:
+            error.message || 'Unable to validate the session with the API.',
         });
-        return;
       }
-
-      setFeedback({
-        tone: 'danger',
-        message: error.message || 'Failed to load your shipments.',
-      });
-      setHasLoadedShippingLabels(true);
-    } finally {
-      setIsShippingLabelsLoading(false);
     }
-  });
+
+    initializeAuthenticatedSession();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
 
   const handleModeChange = (nextMode) => {
     clearFeedback();
@@ -440,13 +437,57 @@ function App() {
       return;
     }
 
+    let isCancelled = false;
+
+    async function loadShippingLabels() {
+      setIsShippingLabelsLoading(true);
+
+      try {
+        const labels = await listShippingLabels();
+
+        if (isCancelled) {
+          return;
+        }
+
+        setShippingLabels(labels);
+        setHasLoadedShippingLabels(true);
+      } catch (error) {
+        if (isCancelled) {
+          return;
+        }
+
+        if (error.status === 401) {
+          setUser(null);
+          setStatus('guest');
+          setMode('sign');
+          setWorkspaceView('list');
+          resetShippingWorkspace();
+          resetShippingLabelsState();
+          setFeedback({
+            tone: 'danger',
+            message: 'Your session has expired. Sign in again to continue.',
+          });
+          return;
+        }
+
+        setFeedback({
+          tone: 'danger',
+          message: error.message || 'Failed to load your shipments.',
+        });
+        setHasLoadedShippingLabels(true);
+      } finally {
+        if (!isCancelled) {
+          setIsShippingLabelsLoading(false);
+        }
+      }
+    }
+
     loadShippingLabels();
-  }, [
-    hasLoadedShippingLabels,
-    isAuthenticated,
-    loadShippingLabels,
-    workspaceView,
-  ]);
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [hasLoadedShippingLabels, isAuthenticated, workspaceView]);
 
   return (
     <main className="app-shell">

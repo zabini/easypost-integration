@@ -1,3 +1,4 @@
+import { StrictMode } from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import App from './App';
 
@@ -175,6 +176,162 @@ test('redirects to list after sign in', async () => {
   expect(await screen.findByText(/jane doe/i)).toBeInTheDocument();
   expect(screen.getAllByText(/my shipments/i)).toHaveLength(2);
   expect(
-    screen.getByText(/no shipments found for your account/i)
+    await screen.findByText(/no shipments found for your account/i)
   ).toBeInTheDocument();
+});
+
+test('loads the authenticated session once in strict mode', async () => {
+  let authMeRequests = 0;
+
+  global.fetch.mockImplementation(async (path) => {
+    if (path === '/auth/me') {
+      authMeRequests += 1;
+
+      return createJsonResponse({
+        ok: true,
+        payload: {
+          data: {
+            id: 7,
+            name: 'Jane Doe',
+            email: 'jane@example.com',
+          },
+        },
+        status: 200,
+      });
+    }
+
+    if (path === '/shipping-labels') {
+      return createJsonResponse({
+        ok: true,
+        payload: {
+          data: [],
+        },
+        status: 200,
+      });
+    }
+
+    throw new Error(`Unexpected request: ${path}`);
+  });
+
+  render(
+    <StrictMode>
+      <App />
+    </StrictMode>
+  );
+
+  expect(
+    await screen.findByText(/no shipments found for your account/i)
+  ).toBeInTheDocument();
+  expect(authMeRequests).toBe(1);
+});
+
+test('keeps the create shipment view active after creating a shipping label', async () => {
+  let authMeRequests = 0;
+
+  global.fetch.mockImplementation(async (path, options = {}) => {
+    if (path === '/auth/me') {
+      authMeRequests += 1;
+
+      return createJsonResponse({
+        ok: true,
+        payload: {
+          data: {
+            id: 7,
+            name: 'Jane Doe',
+            email: 'jane@example.com',
+          },
+        },
+        status: 200,
+      });
+    }
+
+    if (path === '/shipping-labels' && options.method === 'POST') {
+      return createJsonResponse({
+        ok: true,
+        payload: {
+          data: {
+            id: 21,
+            tracking_code: '9405500000000000000000',
+            label_url: 'https://example.test/created-label.pdf',
+            carrier: 'USPS',
+            service: 'Ground Advantage',
+            rate_amount: '7.42',
+            rate_currency: 'USD',
+            status: 'purchased',
+            from_address: {
+              name: 'Jane Sender',
+              street1: '417 Montgomery Street',
+              city: 'San Francisco',
+              state: 'CA',
+              zip: '94104',
+              country: 'US',
+            },
+            to_address: {
+              name: 'John Receiver',
+              street1: '388 Townsend St',
+              city: 'San Francisco',
+              state: 'CA',
+              zip: '94107',
+              country: 'US',
+            },
+            parcel: {
+              weight_oz: 12,
+              length_in: 10,
+              width_in: 7,
+              height_in: 4,
+            },
+            created_at: '2026-04-06T15:00:00Z',
+            easypost_shipment_id: 'shp_123',
+            easypost_rate_id: 'rate_123',
+          },
+        },
+        status: 201,
+      });
+    }
+
+    if (path === '/shipping-labels') {
+      return createJsonResponse({
+        ok: true,
+        payload: {
+          data: [],
+        },
+        status: 200,
+      });
+    }
+
+    if (path === '/sanctum/csrf-cookie') {
+      return createJsonResponse({
+        ok: true,
+        payload: null,
+        status: 204,
+      });
+    }
+
+    throw new Error(`Unexpected request: ${path}`);
+  });
+
+  render(<App />);
+
+  expect(
+    await screen.findByText(/no shipments found for your account/i)
+  ).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('tab', { name: /^new shipment$/i }));
+
+  expect(
+    screen.getByRole('heading', { name: /create shipping label/i })
+  ).toBeInTheDocument();
+
+  fireEvent.click(
+    screen.getByRole('button', { name: /^create shipping label$/i })
+  );
+
+  expect(
+    await screen.findByText(/shipping label created successfully/i)
+  ).toBeInTheDocument();
+  expect(screen.getByText('9405500000000000000000')).toBeInTheDocument();
+  expect(
+    screen.getByRole('tab', { name: /^new shipment$/i })
+  ).toHaveAttribute('aria-selected', 'true');
+  expect(authMeRequests).toBe(1);
 });
