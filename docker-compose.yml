@@ -42,6 +42,7 @@ services:
     environment:
       - HOST=0.0.0.0
       - PORT=3000
+      - API_PROXY_TARGET=http://easypost-integration-nginx
       - CHOKIDAR_USEPOLLING=true
     ports:
       - "${UI_PORT:-3000}:3000"
