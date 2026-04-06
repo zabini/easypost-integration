@@ -1,0 +1,91 @@
+
+services:
+
+  easypost-integration-api:
+    image: zabini/easypost-integration-api:local
+    build:
+      context: ./api
+      dockerfile: build/docker/Dockerfile
+      args:
+        UID: "${UID:-33}"
+    container_name: easypost-integration-php
+    restart: unless-stopped
+    mem_limit: 1g
+    env_file:
+      - ./api/.env
+    volumes:
+      - ./api:/var/www:cached
+    networks:
+      - easypost-integration-net
+
+  easypost-integration-nginx:
+    image: nginx:alpine
+    container_name: easypost-integration-nginx
+    restart: unless-stopped
+    depends_on:
+      - easypost-integration-api
+    ports:
+      - "3031:80"
+    volumes:
+      - ./api:/var/www:cached
+      - ./api/build/nginx:/etc/nginx/conf.d/:cached
+    networks:
+      - easypost-integration-net
+
+  easypost-integration-ui:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+    container_name: easypost-integration-ui
+    restart: unless-stopped
+    working_dir: /app
+    environment:
+      - HOST=0.0.0.0
+      - PORT=3000
+      - CHOKIDAR_USEPOLLING=true
+    ports:
+      - "${UI_PORT:-3000}:3000"
+    volumes:
+      - ./ui:/app:cached
+      - easypost-integration-ui-node-modules:/app/node_modules
+    command:
+      - /bin/sh
+      - -c
+      - if [ ! -L /app/node_modules/.bin/react-scripts ]; then npm ci; fi && exec npm start
+    networks:
+      - easypost-integration-net
+
+  easypost-integration-db:
+    container_name: easypost-integration-db
+    image: mysql:8.0
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password --lower_case_table_names=1 --sort_buffer_size=512K
+    env_file:
+      - ./api/.env
+    volumes:
+      - easypost-integration-data:/var/lib/mysql
+    entrypoint:
+      - /bin/sh
+      - -c
+      - export MYSQL_DATABASE="$$DB_DATABASE" MYSQL_ROOT_PASSWORD="$$DB_PASSWORD" && if [ "$$DB_USERNAME" != "root" ]; then export MYSQL_USER="$$DB_USERNAME" MYSQL_PASSWORD="$$DB_PASSWORD"; fi && exec docker-entrypoint.sh mysqld
+    ports:
+      - 3306:3306
+    networks:
+      - easypost-integration-net
+      
+  # easypost-integration-redis:
+  #   image: redis
+  #   container_name: easypost-integration-redis
+  #   restart: unless-stopped
+  #   command: redis-server --requirepass root_pass --appendonly yes
+  #   ports:
+  #     - "6379:6379"
+  #   networks:
+  #     - easypost-integration-net
+
+volumes:
+  easypost-integration-data:
+  easypost-integration-ui-node-modules:
+
+networks:
+  easypost-integration-net:

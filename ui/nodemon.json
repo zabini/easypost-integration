@@ -1,0 +1,14 @@
+{
+  "exec": "npm start",
+  "watch": [
+    "package.json",
+    "package-lock.json",
+    ".env",
+    ".env.local",
+    ".env.development",
+    ".env.development.local"
+  ],
+  "ext": "json,env",
+  "signal": "SIGTERM",
+  "delay": "1"
+}
