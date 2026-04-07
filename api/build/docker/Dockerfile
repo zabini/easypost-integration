@@ -11,10 +11,12 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 COPY build/php/ /tmp/build-php/
+COPY build/docker/entrypoint.sh /usr/local/bin/api-entrypoint
 
 RUN if ls /tmp/build-php/*.ini >/dev/null 2>&1; then cp /tmp/build-php/*.ini /usr/local/etc/php/conf.d/; fi \
     && if ls /tmp/build-php/*.conf >/dev/null 2>&1; then cp /tmp/build-php/*.conf /usr/local/etc/php-fpm.d/; fi \
-    && rm -rf /tmp/build-php
+    && rm -rf /tmp/build-php \
+    && chmod +x /usr/local/bin/api-entrypoint
 
 RUN usermod -u $UID $USER
 
@@ -51,3 +53,6 @@ RUN composer dump-autoload --optimize && \
     php artisan event:cache && \
     php artisan route:cache && \
     php artisan view:cache
+
+ENTRYPOINT ["api-entrypoint"]
+CMD ["php-fpm"]

@@ -12,21 +12,18 @@ services:
     mem_limit: 1g
     env_file:
       - ./api/.env
-    volumes:
-      - ./api:/var/www:cached
     networks:
       - easypost-integration-net
 
   easypost-integration-nginx:
-    image: nginx:alpine
+    build:
+      context: ./api
+      dockerfile: build/nginx/Dockerfile
     restart: unless-stopped
     depends_on:
       - easypost-integration-api
     ports:
       - "3031:80"
-    volumes:
-      - ./api:/var/www:cached
-      - ./api/build/nginx:/etc/nginx/conf.d/:cached
     networks:
       - easypost-integration-net
 
@@ -43,13 +40,9 @@ services:
       - CHOKIDAR_USEPOLLING=true
     ports:
       - "${UI_PORT:-3000}:3000"
-    volumes:
-      - ./ui:/app:cached
-      - easypost-integration-ui-node-modules:/app/node_modules
     command:
-      - /bin/sh
-      - -c
-      - if [ ! -L /app/node_modules/.bin/react-scripts ]; then npm ci; fi && exec npm start
+      - npm
+      - start
     networks:
       - easypost-integration-net
 
@@ -72,7 +65,6 @@ services:
 
 volumes:
   easypost-integration-data:
-  easypost-integration-ui-node-modules:
 
 networks:
   easypost-integration-net:
