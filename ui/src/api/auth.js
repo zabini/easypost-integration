@@ -1,4 +1,41 @@
-import { clearAccessToken, request, setAccessToken } from './client';
+import { clearAuthTokens, request, setAuthTokens } from './client';
+
+function resolveTokens(payload) {
+  const meta = payload?.meta || {};
+  const metaTokens = meta?.tokens || {};
+  const payloadTokens = payload?.tokens || {};
+
+  return {
+    access_token:
+      meta.access_token ||
+      meta.accessToken ||
+      metaTokens.access_token ||
+      metaTokens.accessToken ||
+      payload.access_token ||
+      payload.accessToken ||
+      payloadTokens.access_token ||
+      payloadTokens.accessToken ||
+      payloadTokens.token ||
+      payload.token ||
+      '',
+    refresh_token:
+      meta.refresh_token ||
+      meta.refreshToken ||
+      metaTokens.refresh_token ||
+      metaTokens.refreshToken ||
+      payload.refresh_token ||
+      payload.refreshToken ||
+      payloadTokens.refresh_token ||
+      payloadTokens.refreshToken ||
+      '',
+    token_type:
+      meta.token_type ||
+      meta.tokenType ||
+      payload.token_type ||
+      payload.tokenType ||
+      '',
+  };
+}
 
 export async function getAuthenticated() {
   const payload = await request('/auth/me');
@@ -12,26 +49,28 @@ export async function sign(credentials) {
     method: 'POST',
   });
 
-  setAccessToken(payload?.meta?.access_token || '');
+  setAuthTokens(resolveTokens(payload || {}));
 
   return payload?.data || null;
 }
 
-export async function sgnup(accountData) {
+export async function signup(accountData) {
   const payload = await request('/auth/signup', {
     body: accountData,
     method: 'POST',
   });
 
-  setAccessToken(payload?.meta?.access_token || '');
+  setAuthTokens(resolveTokens(payload || {}));
 
   return payload?.data || null;
 }
 
+export const sgnup = signup;
+
 export async function signout() {
   const payload = await request('/auth/logout', { method: 'POST' });
 
-  clearAccessToken();
+  clearAuthTokens();
 
   return payload?.message || '';
 }

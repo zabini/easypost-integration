@@ -1,5 +1,5 @@
 import { StrictMode } from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import App from './App';
 
 function createJsonResponse({ ok, payload, status }) {
@@ -46,8 +46,11 @@ test('renders sign in form for guest users', async () => {
 
 test('renders shipping label workspace for authenticated users', async () => {
   window.localStorage.setItem('auth_access_token', 'test-token');
+  const authHeadersByPath = {};
 
-  global.fetch.mockImplementation(async (path) => {
+  global.fetch.mockImplementation(async (path, options = {}) => {
+    authHeadersByPath[path] = options?.headers?.Authorization || '';
+
     if (path === '/auth/me') {
       return createJsonResponse({
         ok: true,
@@ -117,6 +120,8 @@ test('renders shipping label workspace for authenticated users', async () => {
     screen.getByRole('tab', { name: /^new shipment$/i })
   ).toBeInTheDocument();
   expect(screen.getByText(/get \/shipping-labels/i)).toBeInTheDocument();
+  expect(authHeadersByPath['/auth/me']).toBe('Bearer test-token');
+  expect(authHeadersByPath['/shipping-labels']).toBe('Bearer test-token');
 });
 
 test('redirects to list after sign in', async () => {
@@ -169,6 +174,146 @@ test('redirects to list after sign in', async () => {
   expect(
     await screen.findByText(/no shipments found for your account/i)
   ).toBeInTheDocument();
+});
+
+test('keeps the latest token after sign in when a stale auth check returns 401', async () => {
+  window.localStorage.setItem('auth_access_token', 'stale-token');
+  const authHeadersByPath = {};
+  let resolveAuthMeRequest;
+
+  const staleAuthMeResponse = new Promise((resolve) => {
+    resolveAuthMeRequest = resolve;
+  });
+
+  global.fetch.mockImplementation(async (path, options = {}) => {
+    authHeadersByPath[path] = options?.headers?.Authorization || '';
+
+    if (path === '/auth/me') {
+      return staleAuthMeResponse;
+    }
+
+    if (path === '/auth/login') {
+      return createJsonResponse({
+        ok: true,
+        payload: {
+          data: {
+            id: 7,
+            name: 'Jane Doe',
+            email: 'jane@example.com',
+          },
+          meta: {
+            access_token: 'fresh-token',
+            token_type: 'Bearer',
+          },
+        },
+        status: 200,
+      });
+    }
+
+    if (path === '/shipping-labels') {
+      return createJsonResponse({
+        ok: true,
+        payload: {
+          data: [],
+        },
+        status: 200,
+      });
+    }
+
+    throw new Error(`Unexpected request: ${path}`);
+  });
+
+  render(<App />);
+
+  await screen.findByRole('button', { name: /^sign in$/i });
+
+  fireEvent.change(screen.getByLabelText(/email/i), {
+    target: { value: 'jane@example.com' },
+  });
+  fireEvent.change(screen.getByLabelText(/password/i), {
+    target: { value: 'secret123' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: /^sign in$/i }));
+
+  expect(await screen.findByText(/jane doe/i)).toBeInTheDocument();
+  expect(window.localStorage.getItem('auth_access_token')).toBe('fresh-token');
+  expect(authHeadersByPath['/shipping-labels']).toBe('Bearer fresh-token');
+
+  resolveAuthMeRequest(
+    createJsonResponse({
+      ok: false,
+      payload: { message: 'Unauthenticated.' },
+      status: 401,
+    })
+  );
+
+  await waitFor(() => {
+    expect(window.localStorage.getItem('auth_access_token')).toBe('fresh-token');
+    expect(screen.getByText(/jane doe/i)).toBeInTheDocument();
+  });
+});
+
+test('stores returned tokens in localStorage after sign up', async () => {
+  const authHeadersByPath = {};
+
+  global.fetch.mockImplementation(async (path, options = {}) => {
+    authHeadersByPath[path] = options?.headers?.Authorization || '';
+
+    if (path === '/auth/signup') {
+      return createJsonResponse({
+        ok: true,
+        payload: {
+          data: {
+            id: 9,
+            name: 'John Doe',
+            email: 'john@example.com',
+          },
+          meta: {
+            access_token: 'signup-token',
+            refresh_token: 'refresh-token',
+            token_type: 'Bearer',
+          },
+        },
+        status: 201,
+      });
+    }
+
+    if (path === '/shipping-labels') {
+      return createJsonResponse({
+        ok: true,
+        payload: {
+          data: [],
+        },
+        status: 200,
+      });
+    }
+
+    throw new Error(`Unexpected request: ${path}`);
+  });
+
+  render(<App />);
+
+  fireEvent.click(screen.getByRole('tab', { name: /^sign up$/i }));
+
+  fireEvent.change(screen.getByLabelText(/^name$/i), {
+    target: { value: 'John Doe' },
+  });
+  fireEvent.change(screen.getByLabelText(/^email$/i), {
+    target: { value: 'john@example.com' },
+  });
+  fireEvent.change(screen.getByLabelText(/^password$/i), {
+    target: { value: 'secret123' },
+  });
+  fireEvent.change(screen.getByLabelText(/password confirmation/i), {
+    target: { value: 'secret123' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: /create account/i }));
+
+  expect(await screen.findByText(/john doe/i)).toBeInTheDocument();
+  expect(window.localStorage.getItem('auth_access_token')).toBe('signup-token');
+  expect(window.localStorage.getItem('auth_refresh_token')).toBe('refresh-token');
+  expect(window.localStorage.getItem('auth_token_type')).toBe('Bearer');
+  expect(authHeadersByPath['/shipping-labels']).toBe('Bearer signup-token');
 });
 
 test('loads the authenticated session once in strict mode', async () => {

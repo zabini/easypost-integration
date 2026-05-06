@@ -4,21 +4,66 @@ const DEFAULT_HEADERS = {
 };
 
 const ACCESS_TOKEN_KEY = 'auth_access_token';
+const REFRESH_TOKEN_KEY = 'auth_refresh_token';
+const TOKEN_TYPE_KEY = 'auth_token_type';
+
+function normalizeToken(value) {
+  return typeof value === 'string' ? value.trim() : '';
+}
 
 export function getAccessToken() {
   return window.localStorage.getItem(ACCESS_TOKEN_KEY) || '';
 }
 
+export function getRefreshToken() {
+  return window.localStorage.getItem(REFRESH_TOKEN_KEY) || '';
+}
+
+export function getTokenType() {
+  return window.localStorage.getItem(TOKEN_TYPE_KEY) || '';
+}
+
 export function setAccessToken(token) {
-  if (!token) {
+  const normalizedToken = normalizeToken(token);
+
+  if (normalizedToken) {
+    window.localStorage.setItem(ACCESS_TOKEN_KEY, normalizedToken);
     return;
   }
 
-  window.localStorage.setItem(ACCESS_TOKEN_KEY, token);
+  window.localStorage.removeItem(ACCESS_TOKEN_KEY);
+}
+
+export function setAuthTokens(tokens = {}) {
+  setAccessToken(tokens.access_token || tokens.accessToken || tokens.token || '');
+
+  const refreshToken = normalizeToken(
+    tokens.refresh_token || tokens.refreshToken || ''
+  );
+
+  if (refreshToken) {
+    window.localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+  } else {
+    window.localStorage.removeItem(REFRESH_TOKEN_KEY);
+  }
+
+  const tokenType = normalizeToken(tokens.token_type || tokens.tokenType || '');
+
+  if (tokenType) {
+    window.localStorage.setItem(TOKEN_TYPE_KEY, tokenType);
+  } else {
+    window.localStorage.removeItem(TOKEN_TYPE_KEY);
+  }
 }
 
 export function clearAccessToken() {
   window.localStorage.removeItem(ACCESS_TOKEN_KEY);
+}
+
+export function clearAuthTokens() {
+  clearAccessToken();
+  window.localStorage.removeItem(REFRESH_TOKEN_KEY);
+  window.localStorage.removeItem(TOKEN_TYPE_KEY);
 }
 
 async function parseResponseBody(response) {
@@ -76,7 +121,14 @@ export async function request(path, options = {}) {
 
   if (!response.ok) {
     if (response.status === 401) {
-      clearAccessToken();
+      const latestAccessToken = getAccessToken();
+      const shouldClearAuthTokens =
+        (!accessToken && !latestAccessToken) ||
+        (Boolean(accessToken) && latestAccessToken === accessToken);
+
+      if (shouldClearAuthTokens) {
+        clearAuthTokens();
+      }
     }
 
     throw createHttpError(response, payload);

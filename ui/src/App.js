@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { getAuthenticated, sign, sgnup, signout } from './api/auth';
-import { clearAccessToken, getAccessToken } from './api/client';
+import { getAuthenticated, sign, signup, signout } from './api/auth';
+import { clearAuthTokens, getAccessToken } from './api/client';
 import {
   createShippingLabel,
   listShippingLabels,
@@ -194,12 +194,13 @@ function App() {
 
   useEffect(() => {
     let isCancelled = false;
+    const initialAccessToken = getAccessToken();
 
     async function initializeAuthenticatedSession() {
       try {
         const authenticatedUser = await loadInitialAuthenticatedUser();
 
-        if (isCancelled) {
+        if (isCancelled || getAccessToken() !== initialAccessToken) {
           return;
         }
 
@@ -213,7 +214,7 @@ function App() {
         setUser(authenticatedUser);
         setStatus('authenticated');
       } catch (error) {
-        if (isCancelled) {
+        if (isCancelled || getAccessToken() !== initialAccessToken) {
           return;
         }
 
@@ -222,7 +223,7 @@ function App() {
         resetShippingLabelsState();
 
         if (error.status === 401) {
-          clearAccessToken();
+          clearAuthTokens();
           return;
         }
 
@@ -333,7 +334,7 @@ function App() {
     setIsAuthSubmitting(true);
 
     try {
-      const authenticatedUser = await sgnup({
+      const authenticatedUser = await signup({
         name: signUpForm.name.trim(),
         email: signUpForm.email.trim(),
         password: signUpForm.password,
@@ -424,7 +425,7 @@ function App() {
       });
     } catch (error) {
       if (error.status === 401) {
-        clearAccessToken();
+        clearAuthTokens();
         setUser(null);
         setStatus('guest');
         setMode('sign');
@@ -479,7 +480,7 @@ function App() {
         }
 
         if (error.status === 401) {
-          clearAccessToken();
+          clearAuthTokens();
           setUser(null);
           setStatus('guest');
           setMode('sign');
@@ -1238,15 +1239,15 @@ function App() {
                   Sign in
                 </button>
                 <button
-                  aria-controls="sgnup-panel"
-                  aria-selected={mode === 'sgnup'}
+                  aria-controls="signup-panel"
+                  aria-selected={mode === 'signup'}
                   className={
-                    mode === 'sgnup'
+                    mode === 'signup'
                       ? 'mode-switch__button is-active'
                       : 'mode-switch__button'
                   }
-                  id="sgnup-tab"
-                  onClick={() => handleModeChange('sgnup')}
+                  id="signup-tab"
+                  onClick={() => handleModeChange('signup')}
                   role="tab"
                   type="button"
                 >
@@ -1302,8 +1303,8 @@ function App() {
                 </div>
               ) : (
                 <div
-                  aria-labelledby="sgnup-tab"
-                  id="sgnup-panel"
+                  aria-labelledby="signup-tab"
+                  id="signup-panel"
                   role="tabpanel"
                 >
                   <form className="auth-form" onSubmit={handleSignUpSubmit}>
