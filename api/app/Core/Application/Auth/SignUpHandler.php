@@ -2,7 +2,6 @@
 
 namespace App\Core\Application\Auth;
 
-use App\Core\Domain\Auth\User;
 use App\Core\Domain\Auth\ValueObjects\Email;
 use App\Core\Domain\Auth\ValueObjects\PlainPassword;
 use App\Core\Domain\Auth\ValueObjects\UserName;
@@ -17,10 +16,9 @@ final readonly class SignUpHandler
         private UserRepository $users,
         private PasswordHasher $passwordHasher,
         private AuthenticationSession $session,
-    ) {
-    }
+    ) {}
 
-    public function handle(SignUp $command): User
+    public function handle(SignUp $command): AuthenticatedSession
     {
         $name = UserName::fromString($command->name);
         $email = Email::fromString($command->email);
@@ -35,8 +33,11 @@ final readonly class SignUpHandler
 
         $user = $this->users->create($name, $email, $passwordHash);
 
-        $this->session->login($user->id());
+        $accessToken = $this->session->login($user->id());
 
-        return $user;
+        return new AuthenticatedSession(
+            user: $user,
+            accessToken: $accessToken,
+        );
     }
 }

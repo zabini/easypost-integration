@@ -31,11 +31,24 @@ class LoginTest extends TestCase
                     'name' => 'Jane Doe',
                     'email' => 'jane@example.com',
                 ],
+            ])
+            ->assertJsonStructure([
+                'data' => [
+                    'id',
+                    'name',
+                    'email',
+                ],
+                'meta' => [
+                    'access_token',
+                    'token_type',
+                ],
             ]);
 
-        $this->assertAuthenticatedAs($user);
+        $this->assertSame('Bearer', $response->json('meta.token_type'));
+        $this->assertNotEmpty($response->json('meta.access_token'));
 
-        $this->getJson('/auth/me')
+        $this->withToken($response->json('meta.access_token'))
+            ->getJson('/auth/me')
             ->assertOk()
             ->assertJson([
                 'data' => [
@@ -63,7 +76,5 @@ class LoginTest extends TestCase
             ->assertJson([
                 'message' => 'Invalid credentials.',
             ]);
-
-        $this->assertGuest();
     }
 }

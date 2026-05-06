@@ -20,7 +20,7 @@ settings:
   maxRedirects: 5
 
 docs: |-
-  Encerra a sessao autenticada atual.
+  Revoga o Bearer token autenticado atual.
 
   ## Sucesso
   `200 OK`

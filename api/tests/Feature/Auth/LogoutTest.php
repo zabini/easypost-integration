@@ -4,6 +4,7 @@ namespace Tests\Feature\Auth;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\PersonalAccessToken;
 use Tests\TestCase;
 
 class LogoutTest extends TestCase
@@ -14,21 +15,22 @@ class LogoutTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $this->postJson('/auth/login', [
+        $loginResponse = $this->postJson('/auth/login', [
             'email' => $user->email,
             'password' => 'password',
         ])->assertOk();
 
-        $this->postJson('/auth/logout')
+        $accessToken = $loginResponse->json('meta.access_token');
+
+        $this->assertNotEmpty($accessToken);
+        [$tokenId] = explode('|', $accessToken);
+
+        $this->withToken($accessToken)->postJson('/auth/logout')
             ->assertOk()
             ->assertJson([
                 'message' => 'Logged out successfully.',
             ]);
 
-        $this->getJson('/auth/me')
-            ->assertUnauthorized()
-            ->assertJson([
-                'message' => 'Unauthenticated.',
-            ]);
+        $this->assertNull(PersonalAccessToken::query()->find($tokenId));
     }
 }

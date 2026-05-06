@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getAuthenticated, sign, sgnup, signout } from './api/auth';
+import { clearAccessToken, getAccessToken } from './api/client';
 import {
   createShippingLabel,
   listShippingLabels,
@@ -87,6 +88,10 @@ function toShippingLabelPayload(form) {
 let authenticatedUserRequest = null;
 
 async function loadInitialAuthenticatedUser() {
+  if (!getAccessToken()) {
+    return null;
+  }
+
   if (!authenticatedUserRequest) {
     authenticatedUserRequest = getAuthenticated().finally(() => {
       authenticatedUserRequest = null;
@@ -217,6 +222,7 @@ function App() {
         resetShippingLabelsState();
 
         if (error.status === 401) {
+          clearAccessToken();
           return;
         }
 
@@ -374,6 +380,21 @@ function App() {
         message: 'Signed out successfully.',
       });
     } catch (error) {
+      if (error.status === 401) {
+        setUser(null);
+        setStatus('guest');
+        setMode('sign');
+        setWorkspaceView('list');
+        setAuthFieldErrors({});
+        resetShippingWorkspace();
+        resetShippingLabelsState();
+        setFeedback({
+          tone: 'neutral',
+          message: 'Signed out successfully.',
+        });
+        return;
+      }
+
       setFeedback({
         tone: 'danger',
         message: error.message || 'Failed to sign out.',
@@ -403,6 +424,7 @@ function App() {
       });
     } catch (error) {
       if (error.status === 401) {
+        clearAccessToken();
         setUser(null);
         setStatus('guest');
         setMode('sign');
@@ -457,6 +479,7 @@ function App() {
         }
 
         if (error.status === 401) {
+          clearAccessToken();
           setUser(null);
           setStatus('guest');
           setMode('sign');

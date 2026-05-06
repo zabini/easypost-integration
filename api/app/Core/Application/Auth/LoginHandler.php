@@ -2,7 +2,6 @@
 
 namespace App\Core\Application\Auth;
 
-use App\Core\Domain\Auth\User;
 use App\Core\Domain\Auth\ValueObjects\Email;
 use App\Core\Domain\Contracts\Auth\AuthenticationSession;
 use App\Core\Domain\Contracts\Auth\PasswordHasher;
@@ -18,7 +17,7 @@ final readonly class LoginHandler
     ) {
     }
 
-    public function handle(Login $command): User
+    public function handle(Login $command): AuthenticatedSession
     {
         $user = $this->users->findByEmail(
             Email::fromString($command->email),
@@ -28,8 +27,11 @@ final readonly class LoginHandler
             throw new InvalidCredentialsException();
         }
 
-        $this->session->login($user->id());
+        $accessToken = $this->session->login($user->id());
 
-        return $user;
+        return new AuthenticatedSession(
+            user: $user,
+            accessToken: $accessToken,
+        );
     }
 }

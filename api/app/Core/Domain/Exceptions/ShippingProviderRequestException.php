@@ -8,4 +8,9 @@ final class ShippingProviderRequestException extends BusinessException
     {
         parent::__construct($message, previous: $previous);
     }
+
+    public function responseStatusCode(): int
+    {
+        return 422;
+    }
 }

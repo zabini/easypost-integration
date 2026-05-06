@@ -15,13 +15,15 @@ http:
       value: XMLHttpRequest
   body:
     type: json
-    data: |-
+    data: |+
       {
         "name": "Jane Doe",
-        "email": "jane@example.com",
+        "email": "{{$randomEmail}}",
         "password": "12345678",
         "password_confirmation": "12345678"
+        
       }
+
   auth: inherit
 
 settings:
@@ -30,8 +32,17 @@ settings:
   followRedirects: true
   maxRedirects: 5
 
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        const accessToken = res.body?.meta?.access_token;
+        if (accessToken) {
+          bru.setEnvVar('access_token', accessToken);
+        }
+
 docs: |-
-  Cria um novo usuario, inicia a sessao autenticada e retorna os dados publicos do usuario.
+  Cria um novo usuario e retorna os dados publicos + Bearer token.
 
   ## Regras
   - `name`: obrigatorio
@@ -47,6 +58,10 @@ docs: |-
       "id": 1,
       "name": "Jane Doe",
       "email": "jane@example.com"
+    },
+    "meta": {
+      "access_token": "token...",
+      "token_type": "Bearer"
     }
   }
   ```

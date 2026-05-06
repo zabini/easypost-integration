@@ -15,6 +15,7 @@ function createJsonResponse({ ok, payload, status }) {
 }
 
 beforeEach(() => {
+  window.localStorage.clear();
   global.fetch = jest.fn();
 });
 
@@ -44,6 +45,8 @@ test('renders sign in form for guest users', async () => {
 });
 
 test('renders shipping label workspace for authenticated users', async () => {
+  window.localStorage.setItem('auth_access_token', 'test-token');
+
   global.fetch.mockImplementation(async (path) => {
     if (path === '/auth/me') {
       return createJsonResponse({
@@ -118,22 +121,6 @@ test('renders shipping label workspace for authenticated users', async () => {
 
 test('redirects to list after sign in', async () => {
   global.fetch.mockImplementation(async (path) => {
-    if (path === '/auth/me') {
-      return createJsonResponse({
-        ok: false,
-        payload: { message: 'Unauthenticated.' },
-        status: 401,
-      });
-    }
-
-    if (path === '/sanctum/csrf-cookie') {
-      return createJsonResponse({
-        ok: true,
-        payload: null,
-        status: 204,
-      });
-    }
-
     if (path === '/auth/login') {
       return createJsonResponse({
         ok: true,
@@ -142,6 +129,10 @@ test('redirects to list after sign in', async () => {
             id: 7,
             name: 'Jane Doe',
             email: 'jane@example.com',
+          },
+          meta: {
+            access_token: 'new-token',
+            token_type: 'Bearer',
           },
         },
         status: 200,
@@ -181,6 +172,8 @@ test('redirects to list after sign in', async () => {
 });
 
 test('loads the authenticated session once in strict mode', async () => {
+  window.localStorage.setItem('auth_access_token', 'test-token');
+
   let authMeRequests = 0;
 
   global.fetch.mockImplementation(async (path) => {
@@ -226,6 +219,8 @@ test('loads the authenticated session once in strict mode', async () => {
 });
 
 test('keeps the create shipment view active after creating a shipping label', async () => {
+  window.localStorage.setItem('auth_access_token', 'test-token');
+
   let authMeRequests = 0;
 
   global.fetch.mockImplementation(async (path, options = {}) => {
@@ -296,14 +291,6 @@ test('keeps the create shipment view active after creating a shipping label', as
           data: [],
         },
         status: 200,
-      });
-    }
-
-    if (path === '/sanctum/csrf-cookie') {
-      return createJsonResponse({
-        ok: true,
-        payload: null,
-        status: 204,
       });
     }
 

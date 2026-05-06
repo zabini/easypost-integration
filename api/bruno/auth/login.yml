@@ -15,11 +15,13 @@ http:
       value: XMLHttpRequest
   body:
     type: json
-    data: |-
+    data: |+
       {
         "email": "jane@example.com",
         "password": "12345678"
+        
       }
+
   auth: inherit
 
 settings:
@@ -28,8 +30,17 @@ settings:
   followRedirects: true
   maxRedirects: 5
 
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        const accessToken = res.body?.meta?.access_token;
+        if (accessToken) {
+          bru.setEnvVar('access_token', accessToken);
+        }
+
 docs: |-
-  Autentica um usuario existente e retorna os dados publicos da sessao.
+  Autentica um usuario existente e retorna os dados publicos + Bearer token.
 
   ## Sucesso
   `200 OK`
@@ -40,6 +51,10 @@ docs: |-
       "id": 1,
       "name": "Jane Doe",
       "email": "jane@example.com"
+    },
+    "meta": {
+      "access_token": "token...",
+      "token_type": "Bearer"
     }
   }
   ```

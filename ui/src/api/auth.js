@@ -1,4 +1,4 @@
-import { request } from './client';
+import { clearAccessToken, request, setAccessToken } from './client';
 
 export async function getAuthenticated() {
   const payload = await request('/auth/me');
@@ -9,9 +9,10 @@ export async function getAuthenticated() {
 export async function sign(credentials) {
   const payload = await request('/auth/login', {
     body: credentials,
-    csrf: true,
     method: 'POST',
   });
+
+  setAccessToken(payload?.meta?.access_token || '');
 
   return payload?.data || null;
 }
@@ -19,18 +20,18 @@ export async function sign(credentials) {
 export async function sgnup(accountData) {
   const payload = await request('/auth/signup', {
     body: accountData,
-    csrf: true,
     method: 'POST',
   });
+
+  setAccessToken(payload?.meta?.access_token || '');
 
   return payload?.data || null;
 }
 
 export async function signout() {
-  const payload = await request('/auth/logout', {
-    csrf: true,
-    method: 'POST',
-  });
+  const payload = await request('/auth/logout', { method: 'POST' });
+
+  clearAccessToken();
 
   return payload?.message || '';
 }

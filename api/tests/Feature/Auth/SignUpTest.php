@@ -27,6 +27,12 @@ class SignUpTest extends TestCase
                     'name' => 'Jane Doe',
                     'email' => 'jane@example.com',
                 ],
+            ])
+            ->assertJsonStructure([
+                'meta' => [
+                    'access_token',
+                    'token_type',
+                ],
             ]);
 
         $this->assertDatabaseHas('users', [
@@ -37,9 +43,11 @@ class SignUpTest extends TestCase
         $user = User::query()->where('email', 'jane@example.com')->firstOrFail();
 
         $this->assertTrue(Hash::check('12345678', $user->password));
-        $this->assertAuthenticatedAs($user);
+        $this->assertSame('Bearer', $response->json('meta.token_type'));
+        $this->assertNotEmpty($response->json('meta.access_token'));
 
-        $this->getJson('/auth/me')
+        $this->withToken($response->json('meta.access_token'))
+            ->getJson('/auth/me')
             ->assertOk()
             ->assertJson([
                 'data' => [
@@ -74,6 +82,5 @@ class SignUpTest extends TestCase
             ]);
 
         $this->assertDatabaseCount('users', 1);
-        $this->assertGuest();
     }
 }

@@ -4,6 +4,7 @@ namespace Tests\Feature\Auth;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class GetAuthenticatedUserTest extends TestCase
@@ -26,7 +27,7 @@ class GetAuthenticatedUserTest extends TestCase
             'email' => 'jane@example.com',
         ]);
 
-        $this->actingAs($user);
+        Sanctum::actingAs($user);
 
         $this->getJson('/auth/me')
             ->assertOk()

@@ -10,10 +10,14 @@ final class LoginController
 {
     public function __invoke(LoginRequest $request, LoginHandler $handler): JsonResponse
     {
-        $user = $handler->handle($request->toCommand());
+        $session = $handler->handle($request->toCommand());
 
         return response()->json([
-            'data' => $user->toPublicArray(),
+            'data' => $session->user->toPublicArray(),
+            'meta' => [
+                'access_token' => $session->accessToken,
+                'token_type' => 'Bearer',
+            ],
         ]);
     }
 }

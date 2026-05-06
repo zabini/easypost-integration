@@ -3,13 +3,23 @@ info:
   type: folder
   seq: 2
 
-docs: |-
-  Endpoints de autenticacao baseados em sessao e cookies.
+request:
+  scripts:
+    - type: before-request
+      code: |-
+        const accessToken = bru.getEnvVar('access_token');
 
-  ## Fluxo esperado
-  1. `POST /auth/signup` ou `POST /auth/login`
-  2. `GET /auth/me` para recuperar o usuario autenticado
-  3. `POST /auth/logout` para encerrar a sessao
+        if (accessToken) {
+          req.headers.Authorization = `Bearer ${accessToken}`;
+        }
 
-  ## Observacao
-  As rotas `POST` passam por middleware de CSRF. No frontend do projeto isso e resolvido com `GET /sanctum/csrf-cookie` antes das mutacoes.
+docs:
+  content: |-
+    Endpoints de autenticacao com Sanctum via Bearer token.
+
+    ## Fluxo esperado
+    1. `POST /auth/signup` ou `POST /auth/login`
+    2. salvar `meta.access_token` em `access_token`
+    3. `GET /auth/me` para recuperar o usuario autenticado
+    4. `POST /auth/logout` para revogar o token atual
+  type: text/markdown

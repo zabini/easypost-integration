@@ -11,10 +11,14 @@ final class SignUpController
 {
     public function __invoke(SignUpRequest $request, SignUpHandler $handler): JsonResponse
     {
-        $user = $handler->handle($request->toCommand());
+        $session = $handler->handle($request->toCommand());
 
         return response()->json([
-            'data' => $user->toPublicArray(),
+            'data' => $session->user->toPublicArray(),
+            'meta' => [
+                'access_token' => $session->accessToken,
+                'token_type' => 'Bearer',
+            ],
         ], Response::HTTP_CREATED);
     }
 }

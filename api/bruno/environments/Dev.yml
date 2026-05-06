@@ -1,0 +1,8 @@
+name: Dev
+variables:
+  - name: port
+    value: :3031
+  - name: url
+    value: http://localhost{{port}}
+  - name: front_url
+    value: http://localhost:3

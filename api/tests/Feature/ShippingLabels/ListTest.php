@@ -6,6 +6,7 @@ use App\Core\Domain\ShippingLabel\ShippingLabelStatus;
 use App\Models\ShippingLabel;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class ListTest extends TestCase
@@ -30,7 +31,7 @@ class ListTest extends TestCase
             'tracking_code' => '9400100000000000000002',
         ]));
 
-        $this->actingAs($user);
+        Sanctum::actingAs($user);
 
         $response = $this->getJson('/shipping-labels')
             ->assertOk()

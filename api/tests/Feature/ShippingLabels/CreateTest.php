@@ -10,6 +10,7 @@ use App\Core\Domain\ShippingLabel\ShippingLabelQuote;
 use App\Core\Domain\ShippingLabel\ShippingLabelShipment;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 use Tests\Doubles\ShippingLabel\FakeShippingLabelGateway;
 use Tests\TestCase;
 
@@ -23,7 +24,7 @@ class CreateTest extends TestCase
 
         $user = User::factory()->create();
 
-        $this->actingAs($user);
+        Sanctum::actingAs($user);
 
         $response = $this->postJson('/shipping-labels', $this->payload())
             ->assertCreated()
@@ -81,7 +82,7 @@ class CreateTest extends TestCase
 
         $user = User::factory()->create();
 
-        $this->actingAs($user);
+        Sanctum::actingAs($user);
 
         $payload = $this->payload();
         $payload['from_address']['country'] = 'BR';
@@ -115,7 +116,7 @@ class CreateTest extends TestCase
 
         $user = User::factory()->create();
 
-        $this->actingAs($user);
+        Sanctum::actingAs($user);
 
         $this->postJson('/shipping-labels', $this->payload())
             ->assertUnprocessable()

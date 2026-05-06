@@ -3,21 +3,22 @@ const DEFAULT_HEADERS = {
   'X-Requested-With': 'XMLHttpRequest',
 };
 
-function readCookie(name) {
-  const cookies = document.cookie ? document.cookie.split('; ') : [];
-  const entry = cookies.find((cookie) => cookie.startsWith(`${name}=`));
+const ACCESS_TOKEN_KEY = 'auth_access_token';
 
-  if (!entry) {
-    return '';
-  }
-
-  return entry.slice(name.length + 1);
+export function getAccessToken() {
+  return window.localStorage.getItem(ACCESS_TOKEN_KEY) || '';
 }
 
-function getXsrfToken() {
-  const token = readCookie('XSRF-TOKEN');
+export function setAccessToken(token) {
+  if (!token) {
+    return;
+  }
 
-  return token ? decodeURIComponent(token) : '';
+  window.localStorage.setItem(ACCESS_TOKEN_KEY, token);
+}
+
+export function clearAccessToken() {
+  window.localStorage.removeItem(ACCESS_TOKEN_KEY);
 }
 
 async function parseResponseBody(response) {
@@ -52,42 +53,21 @@ function createHttpError(response, payload) {
   return error;
 }
 
-async function ensureCsrfCookie() {
-  const response = await fetch('/sanctum/csrf-cookie', {
-    credentials: 'include',
-    headers: DEFAULT_HEADERS,
-    method: 'GET',
-  });
-
-  if (!response.ok) {
-    const payload = await parseResponseBody(response);
-
-    throw createHttpError(response, payload);
-  }
-}
-
 export async function request(path, options = {}) {
-  const { body, csrf = false, method = 'GET' } = options;
-
-  if (csrf) {
-    await ensureCsrfCookie();
-  }
-
+  const { body, method = 'GET' } = options;
   const headers = { ...DEFAULT_HEADERS };
+  const accessToken = getAccessToken();
 
   if (body !== undefined) {
     headers['Content-Type'] = 'application/json';
   }
 
-  const xsrfToken = csrf ? getXsrfToken() : '';
-
-  if (xsrfToken) {
-    headers['X-XSRF-TOKEN'] = xsrfToken;
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
   }
 
   const response = await fetch(path, {
     body: body === undefined ? undefined : JSON.stringify(body),
-    credentials: 'include',
     headers,
     method,
   });
@@ -95,6 +75,10 @@ export async function request(path, options = {}) {
   const payload = await parseResponseBody(response);
 
   if (!response.ok) {
+    if (response.status === 401) {
+      clearAccessToken();
+    }
+
     throw createHttpError(response, payload);
   }
 

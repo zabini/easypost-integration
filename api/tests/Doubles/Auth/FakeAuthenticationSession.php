@@ -8,9 +8,11 @@ final class FakeAuthenticationSession implements AuthenticationSession
 {
     public function __construct(private ?int $currentUserId = null) {}
 
-    public function login(int $userId): void
+    public function login(int $userId): string
     {
         $this->currentUserId = $userId;
+
+        return 'fake-access-token';
     }
 
     public function logout(): void
