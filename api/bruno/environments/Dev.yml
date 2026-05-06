@@ -6,3 +6,5 @@ variables:
     value: http://localhost{{port}}
   - name: front_url
     value: http://localhost:3
+  - secret: true
+    name: access_token

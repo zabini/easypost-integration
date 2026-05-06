@@ -5,7 +5,7 @@ info:
 
 http:
   method: GET
-  url: http://localhost:3031/shipping-labels/1
+  url: "{{url}}/shipping-labels/1"
   headers:
     - name: Accept
       value: application/json

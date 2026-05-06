@@ -5,7 +5,7 @@ info:
 
 http:
   method: POST
-  url: http://localhost:3031/auth/logout
+  url: "{{url}}/auth/logout"
   headers:
     - name: Accept
       value: application/json

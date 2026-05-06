@@ -5,7 +5,7 @@ info:
 
 http:
   method: POST
-  url: http://localhost:3031/auth/login
+  url: "{{url}}/auth/login"
   headers:
     - name: Accept
       value: application/json
@@ -19,16 +19,9 @@ http:
       {
         "email": "jane@example.com",
         "password": "12345678"
-        
       }
 
   auth: inherit
-
-settings:
-  encodeUrl: true
-  timeout: 0
-  followRedirects: true
-  maxRedirects: 5
 
 runtime:
   scripts:
@@ -38,6 +31,12 @@ runtime:
         if (accessToken) {
           bru.setEnvVar('access_token', accessToken);
         }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
 
 docs: |-
   Autentica um usuario existente e retorna os dados publicos + Bearer token.

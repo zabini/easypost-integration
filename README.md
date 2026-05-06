@@ -19,7 +19,7 @@ The backend was structured to separate business rules from framework details:
 - `app/Infra/Persistence`: Eloquent repositories and mappers between the database and the domain.
 - `app/Infra/Http`: JSON requests and controllers.
 
-The JSON endpoints were kept in `routes/web.php` with `statefulApi()` enabled at bootstrap so session/cookie-based Sanctum authentication works well in the SPA scenario.
+The JSON endpoints are exposed in `routes/api.php` and private routes are protected by `auth:sanctum` with Personal Access Tokens (`Authorization: Bearer <token>`).
 
 ## DDD approach
 
@@ -50,9 +50,9 @@ For a take-home exercise, the goal was not to apply DDD ceremonially, but to use
 
 ## Main endpoints
 
-- `POST /auth/signup`: creates a user and starts a session immediately.
+- `POST /auth/signup`: creates a user and returns a Sanctum Bearer token.
 - `POST /auth/login`: authenticates with email and password.
-- `POST /auth/logout`: ends the current session.
+- `POST /auth/logout`: revokes the current Bearer token.
 - `GET /auth/me`: returns the authenticated user.
 - `POST /shipping-labels`: creates a label from addresses and package dimensions.
 - `GET /shipping-labels`: lists the authenticated user's history.
@@ -61,11 +61,11 @@ For a take-home exercise, the goal was not to apply DDD ceremonially, but to use
 ## API routes
 
 - `POST /auth/signup`
-  Creates a new user account and authenticates the session right after sign-up.
+  Creates a new user account and returns the authenticated user plus a Bearer token.
 - `POST /auth/login`
   Authenticates an existing user with email and password.
 - `POST /auth/logout`
-  Ends the current authenticated session.
+  Revokes the current access token.
 - `GET /auth/me`
   Returns the authenticated user's data.
 - `POST /shipping-labels`
@@ -77,9 +77,9 @@ For a take-home exercise, the goal was not to apply DDD ceremonially, but to use
 
 ## Use cases
 
-- register user: creates a new account and authenticates the user immediately after;
-- authenticate user: validates credentials and starts a session for private-route access;
-- get authenticated user: returns the basic data from the current session;
+- register user: creates a new account and returns a Bearer token immediately after;
+- authenticate user: validates credentials and issues a Bearer token for private-route access;
+- get authenticated user: returns the basic data from the current access token;
 - log out: invalidates the current authentication;
 - create shipping label: validates the payload, normalizes address and package data, calls EasyPost, picks the lowest USPS rate, purchases the label, and persists the result;
 - list label history: returns only the labels owned by the authenticated user;
@@ -97,7 +97,7 @@ The `shipping_labels` table stores:
 
 ## Quick start
 
-1. Configure `api/.env` with at least `DB_*`, `APP_KEY`, `SESSION_DOMAIN`, `SANCTUM_STATEFUL_DOMAINS`, and `EASYPOST_API_KEY`.
+1. Configure `api/.env` with at least `DB_*`, `APP_KEY`, and `EASYPOST_API_KEY`.
 2. Start the environment:
 
 ```bash

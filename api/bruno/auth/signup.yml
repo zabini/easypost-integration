@@ -5,7 +5,7 @@ info:
 
 http:
   method: POST
-  url: http://localhost:3031/auth/signup
+  url: "{{url}}/auth/signup"
   headers:
     - name: Accept
       value: application/json
@@ -21,16 +21,9 @@ http:
         "email": "{{$randomEmail}}",
         "password": "12345678",
         "password_confirmation": "12345678"
-        
       }
 
   auth: inherit
-
-settings:
-  encodeUrl: true
-  timeout: 0
-  followRedirects: true
-  maxRedirects: 5
 
 runtime:
   scripts:
@@ -40,6 +33,12 @@ runtime:
         if (accessToken) {
           bru.setEnvVar('access_token', accessToken);
         }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
 
 docs: |-
   Cria um novo usuario e retorna os dados publicos + Bearer token.
