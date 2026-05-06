@@ -2,12 +2,15 @@
 
 namespace App\Core\Domain\Exceptions;
 
-use RuntimeException;
-
-final class AuthenticationRequiredException extends RuntimeException
+final class AuthenticationRequiredException extends BusinessException
 {
     public function __construct()
     {
         parent::__construct('Unauthenticated.');
+    }
+
+    public function responseStatusCode(): int
+    {
+        return 401;
     }
 }

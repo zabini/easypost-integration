@@ -2,12 +2,15 @@
 
 namespace App\Core\Domain\Exceptions;
 
-use RuntimeException;
-
-final class InvalidCredentialsException extends RuntimeException
+final class InvalidCredentialsException extends BusinessException
 {
     public function __construct()
     {
         parent::__construct('Invalid credentials.');
+    }
+
+    public function responseStatusCode(): int
+    {
+        return 401;
     }
 }

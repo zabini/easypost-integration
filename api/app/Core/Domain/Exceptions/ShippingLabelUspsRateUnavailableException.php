@@ -2,9 +2,7 @@
 
 namespace App\Core\Domain\Exceptions;
 
-use RuntimeException;
-
-final class ShippingLabelUspsRateUnavailableException extends RuntimeException
+final class ShippingLabelUspsRateUnavailableException extends BusinessException
 {
     public function __construct()
     {

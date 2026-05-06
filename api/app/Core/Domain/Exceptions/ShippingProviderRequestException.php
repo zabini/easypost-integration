@@ -2,9 +2,7 @@
 
 namespace App\Core\Domain\Exceptions;
 
-use RuntimeException;
-
-final class ShippingProviderRequestException extends RuntimeException
+final class ShippingProviderRequestException extends BusinessException
 {
     public function __construct(string $message = 'Shipping provider rejected the request.', ?\Throwable $previous = null)
     {

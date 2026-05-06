@@ -2,9 +2,7 @@
 
 namespace App\Core\Domain\Exceptions;
 
-use RuntimeException;
-
-final class ShippingLabelAddressNotSupportedException extends RuntimeException
+final class ShippingLabelAddressNotSupportedException extends BusinessException
 {
     /**
      * @param  array<string, list<string>>  $errors
@@ -22,5 +20,21 @@ final class ShippingLabelAddressNotSupportedException extends RuntimeException
     public function errors(): array
     {
         return $this->errors;
+    }
+
+    public function responseStatusCode(): int
+    {
+        return 422;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function responseBody(): array
+    {
+        return [
+            'message' => $this->getMessage(),
+            'errors' => $this->errors(),
+        ];
     }
 }
